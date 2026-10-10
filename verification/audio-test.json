@@ -1,0 +1,118 @@
+{
+  "done": true,
+  "pass": true,
+  "checks": {
+    "ceiling": true,
+    "noFastAttack": true,
+    "levelsFollowState": true,
+    "amRateMax12": true,
+    "amRateInBuzzRange": true,
+    "amLockedToPulse": true
+  },
+  "results": {
+    "max": {
+      "seconds": 20,
+      "peakDbfs": -5,
+      "maxRiseDb200ms": 9.43,
+      "riseAtS": 3.09,
+      "rmsDbfs": -20.24,
+      "chords": [
+        "d0:0",
+        "d1:1"
+      ],
+      "amEnvelopePeakHz": 11.499,
+      "amEnvelopeProminence": 11.9,
+      "amOscMaxHz": 11.88,
+      "amOscMeanHz": 11.5,
+      "amLockN": 23,
+      "pulseHzEstimate": 0.5
+    },
+    "level2": {
+      "seconds": 10,
+      "peakDbfs": -29.42,
+      "maxRiseDb200ms": 4.96,
+      "riseAtS": 3.86,
+      "rmsDbfs": -39.62,
+      "chords": []
+    },
+    "level8": {
+      "seconds": 10,
+      "peakDbfs": -17.98,
+      "maxRiseDb200ms": 5.71,
+      "riseAtS": 3.93,
+      "rmsDbfs": -26.83,
+      "chords": []
+    },
+    "i2": {
+      "seconds": 10,
+      "peakDbfs": -29.42,
+      "maxRiseDb200ms": 4.96,
+      "riseAtS": 3.86,
+      "rmsDbfs": -39.62,
+      "chords": []
+    },
+    "i6": {
+      "seconds": 10,
+      "peakDbfs": -22.17,
+      "maxRiseDb200ms": 5.56,
+      "riseAtS": 2.42,
+      "rmsDbfs": -31.04,
+      "chords": []
+    },
+    "i10": {
+      "seconds": 10,
+      "peakDbfs": -13.53,
+      "maxRiseDb200ms": 6.45,
+      "riseAtS": 3.93,
+      "rmsDbfs": -22.4,
+      "chords": []
+    },
+    "breakthrough": {
+      "seconds": 20,
+      "peakDbfs": -7.46,
+      "maxRiseDb200ms": 6.59,
+      "riseAtS": 18.49,
+      "rmsDbfs": -20.36,
+      "chords": [
+        "c0:0",
+        "c1:1"
+      ]
+    },
+    "challenge": {
+      "seconds": 24,
+      "peakDbfs": -10.37,
+      "maxRiseDb200ms": 9.19,
+      "riseAtS": 3.57,
+      "rmsDbfs": -23.66,
+      "chords": [
+        "c0:0",
+        "d0:0",
+        "d1:1",
+        "relief"
+      ]
+    },
+    "exit": {
+      "seconds": 20,
+      "peakDbfs": -20.39,
+      "maxRiseDb200ms": 10.6,
+      "riseAtS": 12.26,
+      "rmsDbfs": -35.18,
+      "chords": []
+    },
+    "ceilingStress": {
+      "peakDbfs": -3.44,
+      "maxRiseDb200ms": 0
+    }
+  },
+  "renderMs": 4030,
+  "sampleRate": 48000,
+  "frameDt": 0.016,
+  "wavs": [
+    "i2",
+    "i6",
+    "i10",
+    "breakthrough",
+    "challenge",
+    "exit"
+  ]
+}

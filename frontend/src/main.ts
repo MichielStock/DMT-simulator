@@ -2,8 +2,16 @@
 // title → safety → intake → settle → hit → trip → grounding → curve → end → report.
 // URL parameters: ?debug=1 ?timewarp=N ?autofill=<profile> ?dose=<step> ?gentle=1 ?seed=<int>
 // ?autostart=1 (skip the title) ?replay=<id> ?demoEnd=<id>. None of them affects the SafetyLimiter.
+// Scrub mode (tests and galleries only, BUILD.md 5.2 / 16.2; requires ?debug=1):
+//   ?debug=1&scrub=1&dose=<step>&seed=<int>[&v=<0-10>][&layer=<room|form_constants|chrysanthemum|waiting_room|breakthrough>]
+//   [&challenge=1][&entity=1][&message=1][&eyes=<0-1>][&autofill=neutral][&sensitivity=<0.25-3>]
+//   [&sweep=1[&sweepS=<seconds for 0→10→0, default 60>]][&panel=1 (show the scrubber panel)]
+// creates a session through the API with the autofilled intake, waits until it is ready, skips
+// title/safety/intake/hit and enters the trip with the model's intensity replaced by forced values.
+// The normal flow is untouched, and the SafetyLimiter stays the last pass in every mode.
 
 import './ui/retro.css';
+import * as THREE from 'three';
 import { api, sessionAssetUrl, type DoseStep, type LoggedEvent, type TripScript } from './api';
 import { EventLog } from './events';
 import { Director } from './director';
@@ -14,12 +22,13 @@ import { defaultIntake, loadProfile, type Intake } from './profiles';
 import { AdaptiveQuality } from './quality';
 import { clockSeed } from './rng';
 import { createState, LAYER_NAMES, WEIGHT_KEYS, type SharedState, type WeightKey, type Weights } from './state';
-import { mountScrubber } from './debugScrubber';
+import { LAYER_FORCE_V, mountScrubber, parseLayerName, sweepValue } from './debugScrubber';
 import { createRoomLayer } from './layers/room';
 import { createNeuralFieldLayer } from './layers/neuralField';
 import { createHyperbolicLayer } from './layers/hyperbolic';
 import { createWaitingRoomLayer } from './layers/waitingRoom';
 import { createBreakthroughLayer } from './layers/breakthrough';
+import { createAudio, type HyperspaceAudio } from './audio';
 import { mountTitle } from './ui/title';
 import { mountSafety } from './ui/safetyScreen';
 import { mountIntake } from './ui/intake';
@@ -54,6 +63,44 @@ const CFG = {
   demoEnd: Q.get('demoEnd'),
 };
 
+/** Scrub-mode configuration (null outside scrub mode). */
+interface ScrubCfg {
+  v: number;
+  layer: WeightKey | null;
+  challenge: boolean;
+  entity: boolean;
+  message: boolean;
+  eyes: number | null;
+  sensitivity: number | null;
+  sweep: boolean;
+  sweepS: number;
+  panel: boolean;
+}
+const numParam = (k: string): number | null => {
+  const v = Q.get(k);
+  if (v === null || v.trim() === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+const SCRUB: ScrubCfg | null = CFG.debug && Q.get('scrub') === '1' ? (() => {
+  const layer = parseLayerName(Q.get('layer'));
+  const v = numParam('v');
+  const eyes = numParam('eyes');
+  const sens = numParam('sensitivity');
+  return {
+    v: Math.max(0, Math.min(10, v ?? (layer ? LAYER_FORCE_V[layer] : 5))),
+    layer,
+    challenge: Q.get('challenge') === '1',
+    entity: Q.get('entity') === '1',
+    message: Q.get('message') === '1',
+    eyes: eyes === null ? null : Math.max(0, Math.min(1, eyes)),
+    sensitivity: sens === null ? null : Math.max(0.25, Math.min(3, sens)),
+    sweep: Q.get('sweep') === '1',
+    sweepS: Math.max(4, numParam('sweepS') ?? 60),
+    panel: Q.get('panel') === '1',
+  };
+})() : null;
+
 /** Session limits (BUILD.md sections 4.2 and 11). */
 export const LIMITS = {
   capMin: 30,                 // session cap from the first hit
@@ -75,8 +122,17 @@ interface HyperspaceHooks {
   sessionId: string | null;
   forceIntensity: (v: number | null) => void;
   finishEarly: () => void;
+  forceLayer: (name: string | null) => void;
+  forceChallenge: (on: boolean) => void;
+  forceEntity: () => void;
+  forceMessage: () => void;
+  setEyes: (x: number | null) => void;
+  /** true while the trip has rendered at least a few frames, no texture/asset load is pending, every
+   *  layer that exposes `ready` reports it, and the layer weights have reached their (forced) targets. */
+  readyForCapture: boolean;
+  renderStats: { frameMs: number; renderScale: number; frames: number };
   audioContext?: AudioContext;
-  audio?: { exitTone?: () => void; [k: string]: unknown };
+  audio?: HyperspaceAudio;
   drawCurve?: (pts: [number, number][]) => void;
   [k: string]: unknown;
 }
@@ -84,13 +140,76 @@ interface HyperspaceHooks {
 const w = window as unknown as { __hyperspace: HyperspaceHooks };
 const hs: HyperspaceHooks = Object.assign(w.__hyperspace ?? {}, {
   state: null, events: null, screen: 'boot', pipeline: null, sessionId: null,
-  forceIntensity: (v: number | null) => { forcedVisual = v === null || v === undefined ? null : Math.max(0, Math.min(10, Number(v))); },
+  forceIntensity: (v: number | null) => {
+    forcedSweep = false;
+    forcedVisual = v === null || v === undefined ? null : Math.max(0, Math.min(10, Number(v)));
+  },
   finishEarly: () => { activeTrip?.end('escape'); },
+  forceLayer: (name: string | null) => { forcedLayer = name === null || name === undefined ? null : parseLayerName(name); },
+  forceChallenge: (on: boolean) => { forcedChallenge = !!on; if (on) activeTrip?.forceChallengeNow(); },
+  forceEntity: () => { activeTrip?.forceEntityNow(); },
+  forceMessage: () => { forcedMessage = true; activeTrip?.forceMessageNow(); },
+  setEyes: (x: number | null) => { forcedEyes = x === null || x === undefined ? null : Math.max(0, Math.min(1, Number(x))); },
+  readyForCapture: false,
+  renderStats: { frameMs: 0, renderScale: 1, frames: 0 },
 });
 w.__hyperspace = hs;
+
+// ---------------------------------------------------------------------------------------------
+// audio (BUILD.md 12, 4.2): one HyperspaceAudio per session; volume is reachable on every screen.
+
+const volEl = document.createElement('div');
+volEl.className = 'vol-indicator';
+volEl.dataset.testid = 'volume';
+document.body.appendChild(volEl);
+let volTimer: ReturnType<typeof setTimeout> | null = null;
+function showVolume(): void {
+  const a = hs.audio;
+  volEl.textContent = a ? `VOL ${Math.round(a.volume * 100)}%` : 'VOL —';
+  volEl.classList.add('on');
+  if (volTimer) clearTimeout(volTimer);
+  volTimer = setTimeout(() => volEl.classList.remove('on'), 1500);
+}
+window.addEventListener('keydown', (e) => {
+  const a = hs.audio;
+  if (e.key === '-' || e.key === '_') { if (a) a.setVolume(Math.max(0, a.volume - 0.1)); showVolume(); }
+  else if (e.key === '+' || e.key === '=') { if (a) a.setVolume(Math.min(1, a.volume + 0.1)); showVolume(); }
+});
+
+/** Create the session's audio after the hit (needs the AudioContext of the safety-screen click). */
+function createSessionAudio(intake: Intake): void {
+  try { hs.audio?.dispose(); } catch { /* ignore */ }
+  hs.audio = undefined;
+  if (!hs.audioContext) return; // no AudioContext → silent session (section 0.6)
+  try {
+    hs.audio = createAudio(hs.audioContext, { enabled: intake.options.audio !== false, microphone: !!intake.options.microphone, seed: intake.seed });
+  } catch (e) {
+    console.warn('audio unavailable; silent session', e);
+    hs.audio = undefined;
+  }
+}
+function disposeSessionAudio(): void {
+  try { hs.audio?.dispose(); } catch { /* ignore */ }
+  hs.audio = undefined;
+}
 let forcedVisual: number | null = null;
 let forcedLayer: WeightKey | null = null;
+let forcedChallenge = false;   // keep a difficult passage running (re-forced after each relief beat)
+let forcedMessage = false;     // keep the glyph message cycling (12 s shown, 3 s pause)
+let forcedEyes: number | null = null;
+let forcedSweep = false;
 let activeTrip: Trip | null = null;
+
+// Pending texture/asset loads (three's DefaultLoadingManager is used by every loader that is not
+// given its own manager), for readyForCapture.
+let pendingLoads = 0;
+{
+  const mgr = THREE.DefaultLoadingManager;
+  const start = mgr.itemStart.bind(mgr);
+  const end = mgr.itemEnd.bind(mgr);
+  mgr.itemStart = (url: string) => { pendingLoads++; start(url); };
+  mgr.itemEnd = (url: string) => { pendingLoads = Math.max(0, pendingLoads - 1); end(url); };
+}
 
 function setScreen(name: string): void {
   hs.screen = name;
@@ -213,16 +332,21 @@ class Trip {
   private cueEl: HTMLElement;
   private cueTimer: ReturnType<typeof setTimeout> | null = null;
   private fadeEl: HTMLElement;
-  private scrubber: { update: () => void } | null = null;
+  private scrubber: { el: HTMLElement; update: () => void } | null = null;
   private replayQueue: { t: number; apply: () => void }[] = [];
   private offs: (() => void)[] = [];
+  private layers: unknown[] = [];
+  private framesRendered = 0;
+  private sweepStart = -1;
+  private messageCycleStart = -1;
+  private messageShown = false;
 
   constructor(
     private sessionId: string | null,
     private script: TripScript,
     private intake: Intake,
     private hit: HitResult,
-    private opts: { post: boolean; replay?: LoggedEvent[] },
+    private opts: { post: boolean; replay?: LoggedEvent[]; scrub?: ScrubCfg },
   ) {
     const seed = script.seed ?? intake.seed;
     this.state = createState(seed, CFG.timewarp);
@@ -258,6 +382,7 @@ class Trip {
       this.pipeline = new RenderPipeline<SharedState>(canvas, { debug: CFG.debug });
       for (const layer of [createRoomLayer(), createNeuralFieldLayer(), createHyperbolicLayer(), createWaitingRoomLayer(), createBreakthroughLayer()]) {
         this.pipeline.addLayer(layer);
+        this.layers.push(layer);
       }
       const pl = this.pipeline;
       this.quality = new AdaptiveQuality((s) => pl.setRenderScale(s), pl.renderScale);
@@ -318,7 +443,10 @@ class Trip {
         forceMessage: () => this.director.forceMessage(this.model.tMin),
         forceChallenge: () => this.director.forceChallenge(this.model.tMin),
         readout: () => `t ${this.model.tMin.toFixed(2)} min · v ${this.state.intensity.visual.toFixed(2)} · scale ${this.quality?.scale.toFixed(2) ?? '-'}`,
+        toggleSweep: () => { forcedSweep = !forcedSweep; this.sweepStart = -1; if (!forcedSweep) forcedVisual = null; },
       });
+      // scrub mode: the panel stays hidden (clean captures) unless &panel=1
+      if (opts.scrub && !opts.scrub.panel) (this.scrubber as { el: HTMLElement }).el.style.display = 'none';
     }
 
     // ---- replay inputs ----
@@ -342,6 +470,7 @@ class Trip {
       this.sample();
       this.lastFrame = performance.now();
       activeTrip = this;
+      try { hs.audio?.start(); } catch (e) { console.warn('audio start failed', e); }
       this.raf = requestAnimationFrame((t) => this.frame(t));
     });
   }
@@ -372,6 +501,12 @@ class Trip {
     while (this.replayQueue.length && this.replayQueue[0].t <= this.model.tMin + 1e-9) this.replayQueue.shift()!.apply();
     if (this.ended) return;
 
+    // ---- scrub sweep: v follows 0 → 10 → 0 linearly over sweepS seconds of wall time ----
+    if (forcedSweep) {
+      if (this.sweepStart < 0) this.sweepStart = st.wallTime;
+      forcedVisual = sweepValue(st.wallTime - this.sweepStart, this.opts.scrub?.sweepS ?? 60);
+    }
+
     // ---- model ----
     this.model.step((dtWall * CFG.timewarp) / 60);
     const t = this.model.tMin;
@@ -392,28 +527,50 @@ class Trip {
     const f = 0.08 + 0.42 * Math.min(1, v / 10);
     this.pulsePhase = (this.pulsePhase + f * dtWall) % 1;
     st.pulse = (0.5 - 0.5 * Math.cos(2 * Math.PI * this.pulsePhase)) * Math.min(1, v / 5);
+    st.pulsePhase = this.pulsePhase;
+    st.pulseHz = f;
 
     // ---- eyes (section 8.3 auto mode: open during onset, closed from visual 3), 2 s crossfade ----
-    const eyesTarget = this.eyesMode === 'open' ? 0 : this.eyesMode === 'closed' ? 1 : smoothstep(2.5, 3.5, v);
+    const eyesTarget = forcedEyes ?? (this.eyesMode === 'open' ? 0 : this.eyesMode === 'closed' ? 1 : smoothstep(2.5, 3.5, v));
+    if (forcedEyes !== null && this.framesRendered === 0) st.eyesClosed = forcedEyes; // scrub: start settled
     st.eyesClosed += Math.max(-dtWall / 2, Math.min(dtWall / 2, eyesTarget - st.eyesClosed));
 
     // ---- look (user-initiated only, velocity-clamped) ----
     st.look = clampLook(st.look, this.lookTarget, dtWall);
 
-    // ---- director ----
+    // ---- director (scrub: keep a forced difficult passage running) ----
+    if (forcedChallenge && !this.director.challenge.active && this.director.challenge.relief <= 0) {
+      this.director.forceChallenge(t);
+    }
+    // a forced message is shown by the director as soon as the (forced) entity is present
+    if (forcedMessage && !this.messageShown && this.director.entity.present) this.director.forceMessage(t);
     for (const e of this.director.update({ tMin: t, visual: v, latched: st.breakthroughLatched, letGo: st.letGo })) {
       this.events.log(e.type, e.payload, e.t_min);
+      if (e.type === 'message_shown') this.messageShown = true;
       if (e.type === 'entity_appear') this.capture(`entity_${String(e.payload.index ?? 0)}`);
       if (e.type === 'message_shown') this.capture('message');
     }
     Object.assign(st.entity, this.director.entity);
     st.challenge = { ...this.director.challenge };
     st.message = { ...this.director.message };
+    if (forcedMessage && !st.message.active) {
+      // scrub: the director shows the message once; keep it cycling (12 s shown, 3 s pause)
+      if (this.messageCycleStart < 0) this.messageCycleStart = st.wallTime;
+      const ct = (st.wallTime - this.messageCycleStart) % 15;
+      st.message = { active: ct < 12, t: ct };
+    }
+
+    // ---- audio (reads only the shared state); the microphone reading flows back through it ----
+    st.mic = hs.audio?.mic ?? null;
+    try { hs.audio?.update(st, dtWall); } catch (e) { console.warn('audio update failed', e); }
 
     // ---- render (the pipeline always ends with the SafetyLimiter) ----
     if (this.pipeline) {
       try { this.pipeline.render(st); } catch (e) { console.error(e); }
       this.quality?.frame(dtWallMs);
+      this.framesRendered++;
+      hs.renderStats = { frameMs: this.quality?.ema ?? 0, renderScale: this.pipeline.renderScale, frames: this.framesRendered };
+      hs.readyForCapture = this.framesRendered >= 3 && pendingLoads === 0 && this.layersReady() && this.weightsSettled();
     }
     for (const name of this.pendingCaptures.splice(0)) this.capture(name);
 
@@ -438,6 +595,44 @@ class Trip {
   }
   private maxModelV = 0;
 
+  /** Layers may expose `ready` (boolean or () => boolean) while they still load assets. */
+  private layersReady(): boolean {
+    for (const l of this.layers) {
+      const r = (l as { ready?: boolean | (() => boolean) }).ready;
+      if (r === false || (typeof r === 'function' && !r.call(l))) return false;
+    }
+    return true;
+  }
+
+  /** The drawn (faded) weights have reached their targets. */
+  private weightsSettled(): boolean {
+    if (!this.shown || !this.lw) return false;
+    const target = this.forcedTarget(this.lw);
+    for (const k of WEIGHT_KEYS) {
+      const tk = k === 'waitingRoom' ? target[k] * (1 - this.shown.breakthrough) : target[k];
+      if (Math.abs(this.shown[k] - tk) > 0.01) return false;
+    }
+    return true;
+  }
+
+  // ---- scrub / test hooks ----
+  forceChallengeNow(): void { this.director.forceChallenge(this.model.tMin); }
+  forceEntityNow(): void { this.director.forceEntity(this.model.tMin); }
+  forceMessageNow(): void { this.director.forceMessage(this.model.tMin); }
+
+  /** Apply the debug layer override: the forced layer fully present (room included), the other
+   *  higher layers off; breakthrough forced = latched. */
+  private forcedTarget(lw: LayerWeights): LayerWeights {
+    if (!forcedLayer) return lw;
+    const target = { ...lw };
+    for (const k of WEIGHT_KEYS) {
+      if (k === forcedLayer) target[k] = 1;
+      else if (k !== 'room') target[k] = 0;
+    }
+    if (forcedLayer === 'breakthrough') target.breakthroughLatched = true;
+    return target;
+  }
+
   private repeatPending(): boolean {
     return this.model.depot > 1e-3;
   }
@@ -445,15 +640,12 @@ class Trip {
   /** computeLayerWeights (windows, hysteresis, latch) → debug layer override → advanceFade. */
   private updateWeights(v: number, dtWall: number): void {
     this.lw = computeLayerWeights(v, this.lw);
-    let target = this.lw;
-    if (forcedLayer) {
-      target = { ...this.lw };
-      for (const k of WEIGHT_KEYS) if (k !== 'room') target[k] = k === forcedLayer ? 1 : 0;
-      if (forcedLayer === 'breakthrough') target.breakthroughLatched = true;
-    }
+    const target = this.forcedTarget(this.lw);
     this.shown = advanceFade(this.shown, target, dtWall);
     const lw = this.state.layerWeights;
     for (const k of WEIGHT_KEYS) lw[k] = this.shown[k];
+    lw.roomDistortion = this.shown.roomDistortion;
+    lw.fieldModulation = this.shown.fieldModulation;
     this.state.breakthroughLatched = target.breakthroughLatched;
   }
 
@@ -559,7 +751,7 @@ class Trip {
     this.events.log('session_end', { reason });
     this.events.stop();
     setScreen('fade');
-    try { hs.audio?.exitTone?.(); } catch { /* audio is optional */ }
+    try { if (reason === 'escape') hs.audio?.exitTone(); else hs.audio?.stop(3); } catch { /* audio is optional */ }
     const roomImg = this.script.room?.image;
     if (roomImg && this.sessionId) this.fadeEl.style.backgroundImage = `url("${sessionAssetUrl(this.sessionId, roomImg)}")`;
     requestAnimationFrame(() => this.fadeEl.classList.add('on'));
@@ -570,6 +762,11 @@ class Trip {
       document.body.classList.remove('in-trip');
       activeTrip = null;
       forcedLayer = null;
+      forcedChallenge = false;
+      forcedMessage = false;
+      forcedEyes = null;
+      forcedSweep = false;
+      hs.readyForCapture = false;
       await this.events.flush();
       this.resolveEnd({ endMin: t, reason, events: this.events });
     };
@@ -594,6 +791,7 @@ function blobToBase64(b: Blob): Promise<string> {
 // flows
 
 async function sessionFlow(): Promise<'new' | 'title'> {
+  disposeSessionAudio();
   setScreen('safety');
   const s = await mountSafety(root);
   if (s === 'exit') return 'title';
@@ -646,13 +844,16 @@ async function sessionFlow(): Promise<'new' | 'title'> {
   if (hit === 'escape') return 'title';
 
   // trip
+  createSessionAudio(intake);
   const trip = new Trip(sessionId, script, intake, hit, { post: !!sessionId });
   const result = await trip.run();
 
   // grounding (always, including after Escape)
   setScreen('grounding');
   const roomUrl = script.room?.image && sessionId ? sessionAssetUrl(sessionId, script.room.image) : null;
+  try { hs.audio?.groundingAmbient(true); } catch { /* optional */ }
   await mountGrounding(root, { roomUrl, timewarp: CFG.timewarp });
+  try { hs.audio?.stop(4); } catch { /* optional */ }
 
   // curve
   setScreen('curve');
@@ -663,7 +864,76 @@ async function sessionFlow(): Promise<'new' | 'title'> {
     try { await api.finish(sessionId); } catch { /* the end screen reports what is missing */ }
   }
   setScreen('end');
-  return mountEnd(root, { sessionId: sessionId ?? 'offline', instant: CFG.timewarp > 1 });
+  const next = await mountEnd(root, { sessionId: sessionId ?? 'offline', instant: CFG.timewarp > 1 });
+  disposeSessionAudio();
+  return next;
+}
+
+/** Scrub mode (tests / galleries): session through the API with the autofilled intake, then
+ *  straight into the trip with forced values. */
+async function scrubFlow(sc: ScrubCfg): Promise<'new' | 'title'> {
+  setScreen('scrub-setup');
+  let seed = CFG.seed ?? clockSeed();
+  let sessionId: string | null = null;
+  const intake = loadProfile(CFG.autofill ?? 'neutral', { dose: CFG.dose ?? 'breakthrough', gentle: CFG.gentle }, seed)
+    ?? defaultIntake(seed);
+  try {
+    const r = await api.createSession(seed);
+    sessionId = r.id;
+    seed = r.seed ?? seed;
+  } catch {
+    console.warn('scrub: back end not reachable: offline trip script');
+  }
+  intake.seed = seed;
+  intake.hold_fraction = 1;
+  hs.sessionId = sessionId;
+  let script: TripScript = offlineTripScript(intake);
+  if (sessionId) {
+    try {
+      await api.intake(sessionId, intake);
+      const t0 = Date.now();
+      for (;;) {
+        const p = await api.progress(sessionId);
+        if (p.ready) break;
+        if (p.error || p.stage === 'error') throw new Error(p.error ?? 'planning failed');
+        if (Date.now() - t0 > 180_000) throw new Error('planning timed out');
+        await new Promise((r) => setTimeout(r, 250));
+      }
+      script = await api.tripScript(sessionId);
+    } catch (e) {
+      await messageScreen('error', ['SCRUB MODE: THE SESSION COULD NOT BE PREPARED.', String(e)]);
+      return 'title';
+    }
+  }
+  script = structuredClone(script);
+  if (sc.sensitivity !== null) script.pharmacology = { ...script.pharmacology, sensitivity: sc.sensitivity };
+  if ((sc.entity || sc.message) && !(script.breakthrough?.entities?.length)) {
+    // forced entity on a trip script without beings: one procedural being (test convenience)
+    script.breakthrough = { ...script.breakthrough, entities: offlineTripScript(intake).breakthrough.entities };
+  }
+  if (sc.message && !script.breakthrough.message?.present) {
+    script.breakthrough = { ...script.breakthrough, message: { present: true, glyph_seed: seed % 100000 } };
+  }
+  if (sc.challenge) script.challenge = { ...script.challenge, occurs: false }; // forced below, not scheduled
+
+  forcedVisual = sc.v;
+  forcedLayer = sc.layer;
+  forcedSweep = sc.sweep;
+  forcedChallenge = sc.challenge;
+  forcedMessage = sc.message;
+  forcedEyes = sc.eyes;
+  createSessionAudio(intake);
+  const trip = new Trip(sessionId, script, intake, { holdFraction: 1, heldS: 4 }, { post: false, scrub: sc });
+  const running = trip.run();
+  if (sc.entity) trip.forceEntityNow();
+  if (sc.message) trip.forceMessageNow();
+  if (sc.challenge) trip.forceChallengeNow();
+  await running;
+  setScreen('grounding');
+  try { hs.audio?.groundingAmbient(true); } catch { /* optional */ }
+  await mountGrounding(root, { roomUrl: null, timewarp: CFG.timewarp });
+  disposeSessionAudio();
+  return 'title';
 }
 
 async function replayFlow(id: string): Promise<'new' | 'title'> {
@@ -692,7 +962,8 @@ async function main(): Promise<void> {
     return;
   }
   let next: 'new' | 'title' = CFG.autostart ? 'new' : 'title';
-  if (CFG.replay) next = await replayFlow(CFG.replay);
+  if (SCRUB) next = await scrubFlow(SCRUB);
+  else if (CFG.replay) next = await replayFlow(CFG.replay);
   for (;;) {
     if (next === 'title') await titleLoop();
     next = await sessionFlow();

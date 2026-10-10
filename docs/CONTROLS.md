@@ -19,6 +19,7 @@ Every screen is keyboard-first; the mouse also works.
 | Trip | `H` (hold) or the faint `[H] HIT` button | repeat hit: at most 3, only while visual intensity is below 3 ("Too deep to hold the pipe.") |
 | Trip | `I` | heads-up display: plasma and the three channels, relative to the half-effect level |
 | Trip | mouse | look around a little (slow, clamped) |
+| Any screen | `-` / `+` (also `_` / `=`) | sound volume down / up in 10 % steps ("VOL nn%" shows briefly in the corner); works once the session's sound exists (after the hit) |
 | Grounding | any key | continue (after 10 s) |
 | Curve | draw with mouse/touch, `C`, `Enter` | clear, done, then continue |
 | End screen | `R` `P` `N` `T` | read report, replay, new session, title |

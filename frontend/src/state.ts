@@ -1,6 +1,7 @@
 // The shared state of BUILD.md section 11.1, updated every frame by main.ts. Every layer and the
 // audio read only this object; nothing reads the clock directly.
 
+import type * as THREE from 'three';
 import type { TripScript } from './api';
 import { mulberry32, type Rng } from './rng';
 
@@ -10,9 +11,14 @@ export interface Weights {
   chrysanthemum: number;
   waitingRoom: number;
   breakthrough: number;
+  /** room distortion amount 0–1 after its fade (computeLayerWeights, drawn value; set by main.ts) */
+  roomDistortion?: number;
+  /** neural-field modulation of the room 0–1 after its fade (set by main.ts) */
+  fieldModulation?: number;
 }
 
-export type WeightKey = keyof Weights;
+export type WeightKey = 'room' | 'formConstants' | 'chrysanthemum' | 'waitingRoom' | 'breakthrough';
+
 
 /** camelCase state keys → snake_case names used in events and trip scripts. */
 export const LAYER_NAMES: Record<WeightKey, string> = {
@@ -41,8 +47,14 @@ export interface SharedState {
   plasma: number;
   intensity: { body: number; visual: number; auditory: number };
   layerWeights: Weights;
-  fieldTexture: WebGLTexture | unknown | null;
+  /** THREE.Texture (256², half float RGBA) set every frame by the neural-field layer; null until it has rendered */
+  fieldTexture: THREE.Texture | null;
   pulse: number;
+  /** phase 0–1 and frequency (Hz) of the pulse oscillator, for the audio buzz lock (D-A1) */
+  pulsePhase?: number;
+  pulseHz?: number;
+  /** microphone loudness / spectral centroid 0–1 when the microphone option is on and granted */
+  mic?: { level: number; centroid: number } | null;
   challenge: { active: boolean; level: number; relief: number };
   eyesClosed: number;
   palette: Palette;

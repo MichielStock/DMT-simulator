@@ -98,3 +98,17 @@ Each agent runs its own stack so builds and sessions never collide:
 - Playwright: `E2E_BASE_URL=http://127.0.0.1:<vite port> npx playwright test <spec>` (the config skips its webServer when E2E_BASE_URL is set).
 Never run `npx vite build` while another agent may be running one (the lead and the integration agent build).
 `state.fieldTexture` is a `THREE.Texture` (256×256, R = activity in 0–1 after the contrast cap, G = raw u, B = slow drift phase) set every frame by the neural-field layer; it is `null` until that layer has rendered once, so readers must fall back gracefully.
+
+## Amendments (assets-backend, M8)
+- `assets/room_depth.png`: 8-bit greyscale PNG, same size as `assets/room.jpg` (≤ 2048 px long side), **white = near, black = far**, normalised to the 1st–99th percentile (Depth Anything V2 Small, or the synthetic fallback with the same convention). Panorama depth is continuous across the 360° seam. `assets/room_meta.json`: `{source, size, depth_source: "depth_anything_v2_small"|"synthetic", depth_convention, vram}`.
+- `POST /room`: a 2:1 image (±5%) is a panorama (source "panorama", snapped to exactly 2:1) when sent as panorama or when ≥ 1500 px wide; a non-2:1 "panorama" is a photo.
+- `breakthrough.world.image` / `.images`: 2048×1024 seamless equirect PNGs (`assets/world_<k>.png`) whenever a world is planned; `world.procedural` says generated (false) vs procedural (true). Poles calmed; §4.1 pattern contrast verified on 24 views.
+- `breakthrough.entities[i].sprites`: `assets/entity_<i>_{a,b,c}.png`, RGBA square ≤ 1024, straight alpha, when `procedural` is false. Procedural beings: `sprites: []`, extra key `glyph_sprites` (same three-file format).
+- `assets/manifest.json` (fixed path; `provenance` stays `{planner, images}`): `{backend, filter{status}, plan, budget{images_generated, generation_seconds}, assets[{path, kind: room_depth|world|entity, index, variant, generator, seed, prompt, negative_prompt, guidance, filter{ok, reasons, scores}, rejections[], cutout{method, halo}, seam, pattern, people_score, background}], rejections[], fallbacks[], phases (torch VRAM per phase), unload{allocated_mb, resident, ok}}`. Flagged images are never written to disk; accepted raw entity images are kept as `assets/raw/entity_<i>_<v>.jpg`.
+- `generate_assets(..., progress)` calls `progress(stage, detail)` with stage `room` | `images` | `unloading`.
+
+## Amendments (integration M4–M8)
+- `SharedState.layerWeights` also carries the faded `roomDistortion?` and `fieldModulation?` (0–1, set by main.ts); `fieldTexture: THREE.Texture | null`; additive optional fields `pulsePhase?`, `pulseHz?` (pulse oscillator) and `mic?: {level, centroid} | null` (microphone, only when the option is on and granted). Layers and audio still read only the shared state.
+- `window.__hyperspace.audio` is a `HyperspaceAudio` (frontend/src/audio/index.ts), created after the hit, disposed after the end screen. Volume keys `-`/`+` (also `_`/`=`) on every screen; `data-testid="volume"` is the transient "VOL nn%" indicator.
+- Scrub mode (D-G1), `window.__hyperspace.{forceLayer, forceChallenge, forceEntity, forceMessage, setEyes, readyForCapture, renderStats}` (D-G3) and the layer hooks `readField()/fieldInfo()/fieldOverride` (D-NF5) are test-only additions; none of them touches the SafetyLimiter.
+- `/api/session/{id}/progress`: `stage` now also takes `room`/`images`/`unloading` from the asset pipeline while it runs, and the three lines carry the asset pipeline's details (D-I8).

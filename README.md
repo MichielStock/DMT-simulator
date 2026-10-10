@@ -23,7 +23,7 @@ Environment switches: `HYPERSPACE_FORCE_TEMPLATES=1` (no language model), `HYPER
 
 Keyboard-first; full table in `docs/CONTROLS.md`. In the trip: `Esc` or the exit corner ends the
 session (3-second fade, then grounding), `E` eyes, `I` heads-up display, hold `H` for a repeat hit,
-hold `Space` to let go.
+hold `Space` to let go. `-` / `+` change the sound volume on every screen.
 
 ## Where things go
 

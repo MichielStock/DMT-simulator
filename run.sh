@@ -45,6 +45,7 @@ fi
 bash "$ROOT/scripts/ensure_ollama.sh" || echo "warning: Ollama not available; templates will be used" >&2
 
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 HYPERSPACE_OLLAMA_HOST="${HYPERSPACE_OLLAMA_HOST:-http://127.0.0.1:11435}"
+export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
 mkdir -p verification
 
 start_server() {

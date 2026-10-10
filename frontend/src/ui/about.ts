@@ -19,7 +19,7 @@ export const ABOUT_TEXT: { title: string; lines: string[] }[] = [
   ] },
   { title: 'CONTROLS', lines: [
     '[SPACE] HOLD TO INHALE, THEN HOLD TO LET GO   [H] REPEAT HIT   [E] EYES   [I] DISPLAY',
-    '[MOUSE] LOOK AROUND   [ESC] END THE SESSION, AT ANY MOMENT',
+    '[MOUSE] LOOK AROUND   [-] [+] VOLUME   [ESC] END THE SESSION, AT ANY MOMENT',
   ] },
 ];
 

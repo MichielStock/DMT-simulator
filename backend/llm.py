@@ -12,6 +12,7 @@ import time
 import httpx
 
 from backend import runtime
+from backend.models_registry import get_registry
 
 _call_lock = threading.Lock()  # one model on the card at a time
 
@@ -67,6 +68,7 @@ def chat_json(system: str, user: str, schema: dict, *, seed: int = 0, temperatur
     model = runtime.llm_model()
     reg_name = f"ollama:{model}"
     options = {"temperature": temperature, "seed": int(seed) % (2**31)}
+    options["num_ctx"] = int(get_registry().get("llm_num_ctx") or 8192)  # §3.3 budget: 9.75 GB vs 13.55 GB without
     if num_predict:
         options["num_predict"] = num_predict
     body = {"model": model, "stream": False, "think": False, "keep_alive": 0, "format": schema,

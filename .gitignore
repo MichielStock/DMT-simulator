@@ -16,3 +16,5 @@ assets/sample/*.jpg
 .ruff_cache/
 *.egg-info/
 /node_modules
+
+verification/tmp/

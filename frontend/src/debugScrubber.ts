@@ -13,6 +13,23 @@ export interface ScrubberDeps {
   forceMessage: () => void;
   forceChallenge: () => void;
   readout: () => string;
+  /** Start/stop the 0 → 10 → 0 sweep (optional). */
+  toggleSweep?: () => void;
+}
+
+/** snake_case (events, URLs) or camelCase layer name → WeightKey; anything else → null. */
+export function parseLayerName(name: string | null | undefined): WeightKey | null {
+  if (!name) return null;
+  for (const k of WEIGHT_KEYS) if (name === k || name === LAYER_NAMES[k]) return k;
+  return null;
+}
+
+/** Triangle sweep of the visual intensity: 0 → 10 over the first half of `periodS`, back to 0 over
+ *  the second half, repeating. Linear, so every layer window is crossed at a constant slow rate. */
+export function sweepValue(tS: number, periodS: number): number {
+  const p = Math.max(1e-3, periodS);
+  const x = (((tS / p) % 1) + 1) % 1;
+  return x < 0.5 ? 20 * x : 20 * (1 - x);
 }
 
 /** Visual intensity at which each layer is fully present (used when a layer is forced). */
@@ -44,7 +61,8 @@ export function mountScrubber(parent: HTMLElement, deps: ScrubberDeps): { el: HT
     h('div', {},
       h('button', { class: 'key', 'data-testid': 'debug-entity', onclick: deps.forceEntity }, 'ENTITY'),
       h('button', { class: 'key', 'data-testid': 'debug-message', onclick: deps.forceMessage }, 'MESSAGE'),
-      h('button', { class: 'key', 'data-testid': 'debug-challenge', onclick: deps.forceChallenge }, 'CHALLENGE')),
+      h('button', { class: 'key', 'data-testid': 'debug-challenge', onclick: deps.forceChallenge }, 'CHALLENGE'),
+      deps.toggleSweep ? h('button', { class: 'key', 'data-testid': 'debug-sweep', onclick: deps.toggleSweep }, 'SWEEP') : null),
     readout,
   );
   parent.appendChild(el);

@@ -39,6 +39,10 @@ dependencies = [
 [tool.pytest.ini_options]
 testpaths = ["backend/tests"]
 timeout = 900
+markers = [
+  "gpu: needs the RTX 4090 and the downloaded models (run by default here)",
+  "slow: long-running",
+]
 
 [tool.uv]
 package = false

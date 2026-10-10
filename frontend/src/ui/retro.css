@@ -236,3 +236,8 @@ button.key:disabled { color: var(--dim); text-shadow: none; cursor: default; }
   body::after { display: none; }
   html, body { background: #fff; color: #000; }
 }
+
+/* volume indicator (− / + on every screen, BUILD.md 4.2) */
+.vol-indicator { position: fixed; right: 1.5ch; bottom: 1ch; z-index: 50; font-family: VT323, monospace;
+  font-size: 20px; color: #7a5400; opacity: 0; transition: opacity 400ms ease; pointer-events: none; }
+.vol-indicator.on { opacity: 0.85; }

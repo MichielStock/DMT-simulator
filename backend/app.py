@@ -26,6 +26,7 @@ import fastapi  # noqa: E402
 from fastapi import Body, FastAPI, File, Form, HTTPException, UploadFile  # noqa: E402
 from fastapi.responses import HTMLResponse, JSONResponse  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
+from starlette.concurrency import run_in_threadpool  # noqa: E402
 
 from backend import assets as assets_mod  # noqa: E402
 from backend import llm  # noqa: E402
@@ -126,7 +127,13 @@ def plan_session(sid: str, sdir: Path, intake: dict) -> None:
         script = expand_mod.assemble_trip_script(skeleton, expansion, intake, sdir, planner=prov)
         _set(sid, stage="images")
         _line(sid, 1, detail="images")
-        script = assets_mod.generate_assets(script, sdir, lambda stage, detail: _line(sid, 1, detail=detail))
+        def _asset_progress(stage: str, detail: str) -> None:
+            if stage in ("room", "images", "unloading"):
+                _set(sid, stage=stage)
+            _line(sid, {"room": 0, "images": 1, "unloading": 2}.get(stage, 1), detail=detail)
+            _plog(sdir, f"assets: {stage}: {detail}")
+
+        script = assets_mod.generate_assets(script, sdir, _asset_progress)
         errs = expand_mod.validate_trip_script(script)
         if errs:
             _plog(sdir, f"trip script schema errors: {errs[:5]}")
@@ -242,7 +249,8 @@ def create_app() -> FastAPI:
         if not data:
             raise HTTPException(400, "empty file")
         try:
-            return assets_mod.prepare_room(sdir, kind, data)
+            # depth estimation (~3 s on the GPU) must not block the event loop
+            return await run_in_threadpool(assets_mod.prepare_room, sdir, kind, data)
         except Exception as e:
             raise HTTPException(400, f"could not read image: {e}")
 
