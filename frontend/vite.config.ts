@@ -5,8 +5,8 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: {
-      '/api': 'http://127.0.0.1:8765',
-      '/sessions': 'http://127.0.0.1:8765',
+      '/api': process.env.HYPERSPACE_API ?? 'http://127.0.0.1:8765',
+      '/sessions': process.env.HYPERSPACE_API ?? 'http://127.0.0.1:8765',
     },
   },
   build: {
@@ -18,6 +18,7 @@ export default defineConfig({
         main: 'index.html',
         safetyTest: 'safety-test.html',
         report: 'report.html',
+        audioTest: 'audio-test.html',
       },
     },
   },

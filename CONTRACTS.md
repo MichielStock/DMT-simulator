@@ -90,3 +90,11 @@ Profiles: `tests/e2e/profiles/neutral.json` is a full `intake.json` with neutral
 - `layer_enter` fires when the entry window is fully crossed (form_constants 3.0, chrysanthemum 5.2, waiting_room 7.6, breakthrough latch 8.0), `layer_exit` on the 0.01 weight crossing (D-F1).
 - `window.__hyperspace` also has `sessionId`, `audioContext`, `drawCurve`, `audio?.exitTone()` (D-F integration notes).
 - Waiting-room kinds `kifs|mandelbox`; `challenge.onset_offset_s` is seconds after the predicted peak (B2, B3).
+
+## Multi-agent dev servers (added for M4–M8)
+Each agent runs its own stack so builds and sessions never collide:
+- back end: `HYPERSPACE_SESSIONS_DIR=verification/tmp/<agent>/sessions HYPERSPACE_FORCE_TEMPLATES=1 HYPERSPACE_NO_IMAGES=1 uv run uvicorn backend.app:app --host 127.0.0.1 --port <P>` (P in 8771–8779; `run.sh` also honours `HYPERSPACE_PORT`)
+- front end dev server (serves TS directly, no shared dist): `cd frontend && HYPERSPACE_API=http://127.0.0.1:<P> npx vite --port <5174–5179> --strictPort`
+- Playwright: `E2E_BASE_URL=http://127.0.0.1:<vite port> npx playwright test <spec>` (the config skips its webServer when E2E_BASE_URL is set).
+Never run `npx vite build` while another agent may be running one (the lead and the integration agent build).
+`state.fieldTexture` is a `THREE.Texture` (256×256, R = activity in 0–1 after the contrast cap, G = raw u, B = slow drift phase) set every frame by the neural-field layer; it is `null` until that layer has rendered once, so readers must fall back gracefully.

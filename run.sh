@@ -4,7 +4,7 @@ set -uo pipefail
 cd "$(dirname "$(readlink -f "$0")")"
 ROOT="$PWD"
 export PATH="$HOME/.local/bin:$PATH"
-PORT=8765
+PORT="${HYPERSPACE_PORT:-8765}"
 PIDFILE="$ROOT/verification/server.pid"
 DEVPID="$ROOT/verification/vite.pid"
 MODE=""; DEV=0
