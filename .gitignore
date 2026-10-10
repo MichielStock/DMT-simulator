@@ -1,0 +1,17 @@
+sessions/
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
+verification/gallery/
+verification/captures/
+verification/perf/
+verification/*.log
+docs/demo.mp4
+assets/sample/*.jpg
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
