@@ -1,0 +1,44 @@
+[project]
+name = "hyperspace"
+version = "1.0.0"
+description = "Hyperspace: a drug-free, GPU-rendered simulation of the inhaled DMT experience"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "websockets>=12",
+  "python-multipart>=0.0.9",
+  "ollama>=0.4",
+  "torch>=2.4",
+  "torchvision",
+  "diffusers>=0.30",
+  "transformers>=4.44",
+  "accelerate>=0.33",
+  "safetensors",
+  "huggingface_hub>=0.24",
+  "rembg>=2.0.59",
+  "onnxruntime-gpu>=1.18",
+  "matplotlib>=3.9",
+  "jsonschema>=4.23",
+  "numpy>=1.26,<3",
+  "scipy>=1.13",
+  "pillow>=10",
+  "pyyaml>=6",
+  "markdown>=3.6",
+  "imageio>=2.34",
+  "imageio-ffmpeg>=0.5",
+  "opencv-python-headless>=4.10",
+  "httpx>=0.27",
+  "pytest>=8",
+  "pytest-timeout>=2.3",
+  "requests>=2.32",
+  "sentencepiece",
+  "protobuf",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+timeout = 900
+
+[tool.uv]
+package = false
