@@ -9,7 +9,18 @@ export default defineConfig({
       '/sessions': 'http://127.0.0.1:8765',
     },
   },
-  build: { target: 'es2022', sourcemap: true, chunkSizeWarningLimit: 2000 },
+  build: {
+    target: 'es2022',
+    sourcemap: true,
+    chunkSizeWarningLimit: 4000,
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        safetyTest: 'safety-test.html',
+        report: 'report.html',
+      },
+    },
+  },
   assetsInclude: ['**/*.glsl', '**/*.vert', '**/*.frag'],
   test: {
     environment: 'jsdom',
