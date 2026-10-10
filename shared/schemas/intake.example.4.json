@@ -1,0 +1,15 @@
+{
+  "room": { "source": "default" },
+  "answers": {
+    "clarity": 5,
+    "set": -5,
+    "absorption": [5, 5, 5],
+    "surrender": 2,
+    "intention": "reflection",
+    "expectations": ["insectoid"]
+  },
+  "dose_step": "light",
+  "hold_fraction": 0.5,
+  "options": { "difficult_passages": true, "eyes": "auto", "audio": true, "microphone": false, "live_diffusion": false },
+  "seed": 987654321
+}

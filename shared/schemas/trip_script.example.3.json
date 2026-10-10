@@ -1,0 +1,166 @@
+{
+  "version": 1,
+  "seed": 77,
+  "pharmacology": {
+    "dose_step": "breakthrough",
+    "dose_rel": 4.0,
+    "hold_fraction": 1.0,
+    "sensitivity": 1.2,
+    "clearance": 0.9,
+    "params": {
+      "ka": 4.0,
+      "k10": 0.12,
+      "k12": 0.2,
+      "k21": 0.03,
+      "ke0": [
+        2.5,
+        1.2,
+        0.6
+      ],
+      "h": 2.0
+    }
+  },
+  "predicted": {
+    "peak_visual": 8.98,
+    "deepest_layer": "breakthrough",
+    "minutes_above_8": 3.28
+  },
+  "palette": {
+    "name": "ember",
+    "colours": [
+      "#1a0600",
+      "#ff6a00",
+      "#ffb000",
+      "#ffd27a",
+      "#9c1f3a"
+    ]
+  },
+  "room": {
+    "source": "photo",
+    "image": "assets/room.jpg",
+    "depth": "assets/room_depth.png"
+  },
+  "layers": {
+    "form_constants": {
+      "mode": "mixed",
+      "wavelength": 0.7,
+      "spiral_bias": 0.6
+    },
+    "chrysanthemum": {
+      "groups": [
+        [
+          2,
+          3,
+          8
+        ],
+        [
+          3,
+          3,
+          4
+        ]
+      ],
+      "kleinian": {
+        "trace_a": [
+          2.0,
+          0.0
+        ],
+        "trace_b": [
+          2.0,
+          0.0
+        ]
+      }
+    },
+    "waiting_room": {
+      "kind": "kifs"
+    }
+  },
+  "breakthrough": {
+    "reached": true,
+    "world": {
+      "category": "infinite_hall",
+      "prompt": "an infinite hall of radiant towers built from patterned light, self-luminous, no text",
+      "image": null,
+      "procedural": true
+    },
+    "entities": [
+      {
+        "type": "machine_elf",
+        "label": "helper",
+        "attributes": {
+          "conscious": true,
+          "intelligent": true,
+          "benevolent": true,
+          "sacred": false
+        },
+        "disposition": "indifferent",
+        "communication": "user_to_entity",
+        "behaviours": [
+          "approach",
+          "work_on",
+          "transform"
+        ],
+        "sprites": [],
+        "procedural": true
+      },
+      {
+        "type": "machine_elf",
+        "label": "helper",
+        "attributes": {
+          "conscious": true,
+          "intelligent": true,
+          "benevolent": true,
+          "sacred": false
+        },
+        "disposition": "indifferent",
+        "communication": "user_to_entity",
+        "behaviours": [
+          "approach",
+          "work_on",
+          "transform"
+        ],
+        "sprites": [],
+        "procedural": true
+      },
+      {
+        "type": "machine_elf",
+        "label": "helper",
+        "attributes": {
+          "conscious": true,
+          "intelligent": true,
+          "benevolent": true,
+          "sacred": false
+        },
+        "disposition": "indifferent",
+        "communication": "user_to_entity",
+        "behaviours": [
+          "approach",
+          "work_on",
+          "transform"
+        ],
+        "sprites": [],
+        "procedural": true
+      }
+    ],
+    "message": {
+      "present": true,
+      "sealed_text": "The pattern keeps folding into play; there is always one more fold.",
+      "glyph_seed": 1234
+    }
+  },
+  "challenge": {
+    "occurs": true,
+    "onset_offset_s": 15.0,
+    "flavour": "dissolution"
+  },
+  "report": {
+    "length_words": 600,
+    "profundity": true
+  },
+  "contingency": {
+    "breakthrough_assets": true
+  },
+  "provenance": {
+    "planner": "llm",
+    "images": "procedural"
+  }
+}

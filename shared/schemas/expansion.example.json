@@ -1,0 +1,41 @@
+{
+  "world_prompts": [
+    "a vast self-luminous jewelled dome, intricate hyper-saturated mosaics that seem alive, more dimensions than it should have, no text or letters",
+    "the inside of a radiant temple-like dome made of turning geometric light, jewel tones, intricate, alive, no text or letters"
+  ],
+  "world_description": "A huge dome of living mosaic light, every tile turning slowly as if breathing.",
+  "entities": [
+    {
+      "entity_index": 0,
+      "appearance": "A jester made of shifting diamonds of coloured light, with a grin that is more pattern than face.",
+      "prompts": [
+        "a playful jester figure made entirely of luminous jewelled diamonds of light, intricate, hyper-saturated, plain dark background, no text or letters",
+        "a jester of glowing geometric patterns mid-bow, self-luminous, more dimensions than it should have, plain dark background, no text or letters",
+        "a radiant jester dissolving into kaleidoscopic geometry, jewel tones, alive, plain dark background, no text or letters"
+      ],
+      "beats": [
+        { "behaviour": "approach", "at_s": 0, "note": "tumbles closer through the tiles" },
+        { "behaviour": "greet", "at_s": 8, "note": "bows with a flourish of light" },
+        { "behaviour": "present_object", "at_s": 20, "note": "holds out a small spinning crystal" },
+        { "behaviour": "transform", "at_s": 40, "note": "folds itself into a spiral of colour" },
+        { "behaviour": "depart", "at_s": 70, "note": "steps backwards into the dome" }
+      ]
+    },
+    {
+      "entity_index": 1,
+      "appearance": "A tall robed presence of soft geometry that seems to be busy with something nearby.",
+      "prompts": [
+        "a tall robed figure of soft luminous geometry, calm, intricate, plain dark background, no text or letters",
+        "a robed being made of folded planes of light, hyper-saturated, alive, plain dark background, no text or letters",
+        "a radiant robed presence surrounded by small orbiting shapes, jewelled, plain dark background, no text or letters"
+      ],
+      "beats": [
+        { "behaviour": "show", "at_s": 5, "note": "unfolds a lattice of light to look at" },
+        { "behaviour": "work_on", "at_s": 25, "note": "adjusts the patterns around the viewer" }
+      ]
+    }
+  ],
+  "sealed_message": "Everything here was already paying attention, and it was glad you noticed.",
+  "message_theme": "attention",
+  "private_summary": "A playful jester met the viewer under a breathing mosaic dome, offered a spinning crystal and dissolved into colour. A quieter robed presence worked on the patterns nearby. The message felt like being noticed."
+}

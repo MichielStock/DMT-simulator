@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hyperspace.local/schemas/expansion.schema.json",
+  "title": "Hyperspace planner expansion",
+  "description": "Stage-two planner output (BUILD.md section 9.2), filled by the local language model through Ollama's format parameter, or by the template fallback. Flat on purpose: no oneOf/anyOf/$ref, at most three levels. Content limits of section 4.3 apply to every string.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["world_prompts", "world_description", "entities", "sealed_message", "message_theme", "private_summary"],
+  "properties": {
+    "world_prompts": {
+      "description": "One to three image prompts for the breakthrough world backdrop, in the given world category: self-luminous, jewelled, intricate, hyper-saturated, alive, no text or letters.",
+      "type": "array", "minItems": 1, "maxItems": 3,
+      "items": { "type": "string", "minLength": 20, "maxLength": 400 }
+    },
+    "world_description": {
+      "description": "One or two plain sentences describing the world, used by the report writer.",
+      "type": "string", "minLength": 10, "maxLength": 400
+    },
+    "entities": {
+      "description": "One item per entity of the skeleton, in the same order.",
+      "type": "array", "minItems": 0, "maxItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["entity_index", "appearance", "prompts", "beats"],
+        "properties": {
+          "entity_index": { "description": "Index of the entity in the skeleton, starting at 0.", "type": "integer", "minimum": 0, "maximum": 11 },
+          "appearance": { "description": "One sentence describing how the being looks (made of light and geometry, robed, radiant; never graphic, never suggestive, never a real person).", "type": "string", "minLength": 10, "maxLength": 300 },
+          "prompts": {
+            "description": "Exactly three image prompt variants of the same being on a plain dark background, no text or letters.",
+            "type": "array", "minItems": 3, "maxItems": 3,
+            "items": { "type": "string", "minLength": 20, "maxLength": 400 }
+          },
+          "beats": {
+            "description": "Behaviour beats in order, with rough timing.",
+            "type": "array", "minItems": 1, "maxItems": 8,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["behaviour", "at_s", "note"],
+              "properties": {
+                "behaviour": { "description": "Behaviour from the skeleton.", "enum": ["approach", "greet", "present_object", "show", "work_on", "transform", "depart"] },
+                "at_s": { "description": "Seconds after the being appears, 0 to 120.", "type": "number", "minimum": 0, "maximum": 120 },
+                "note": { "description": "Short phrase describing what the being does in this beat.", "type": "string", "maxLength": 200 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "sealed_message": {
+      "description": "The words behind the glyph message, shown only in the report: one or two abstract, non-directive sentences about attention, play, care, curiosity or wonder. Never an instruction, advice, prediction or real person. Empty string when the skeleton has no message.",
+      "type": "string", "maxLength": 240
+    },
+    "message_theme": {
+      "description": "Theme of the sealed message.",
+      "enum": ["attention", "play", "care", "curiosity", "wonder"]
+    },
+    "private_summary": {
+      "description": "Two to four sentences for the report writer summarising world, beings and arc. Never shown during the trip.",
+      "type": "string", "minLength": 20, "maxLength": 800
+    }
+  }
+}

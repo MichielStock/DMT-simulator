@@ -1,0 +1,47 @@
+# Arc beat: beings. Placeholders: {appearance}, {type_word}, {n}. Per entity type variants.
+types:
+  luminous_feminine: ["a tall figure made of light", "a robed, glowing figure", "a luminous feminine presence"]
+  deity: ["an enormous presence", "a vast being made of rings of light", "a presence the size of the sky"]
+  alien: ["a slender alien being", "something like an alien", "a tall alien visitor"]
+  creature_reptilian: ["a huge serpent made of scales of light", "a serpent-like creature", "a coiling creature"]
+  creature_tentacled: ["a creature with many soft arms", "a floating many-armed creature", "a creature like a jellyfish of light"]
+  creature_insectoid: ["an insect-like being", "a mantis-like creature", "an insectoid figure"]
+  creature_feline: ["a huge cat-like being", "a feline creature", "a huge feline creature made of light"]
+  machine_elf: ["little self-transforming elves", "these small bouncing elf things", "tiny jewelled machine elves"]
+  mythological: ["a winged sprite", "an elfin figure", "a fairy-tale creature"]
+  jester: ["a jester", "a grinning harlequin figure", "a jester-like being"]
+  living_geometry: ["a being that was just shape and awareness", "a living, watching being made of structure", "a presence made of moving structure"]
+appear:
+  - "Then there was {type_word}."
+  - "And there was {type_word} there, waiting, like it had been expecting me."
+  - "Out of nowhere there was {type_word}, very close."
+  - "I wasn't alone: there was {type_word}."
+appear_many:
+  - "And there were others there, {n} of them at least, the first one {type_word}."
+  - "There were several beings, maybe {n}, and the nearest was {type_word}."
+appearance_line: "{appearance}"
+behaviours:
+  approach: ["It came towards me slowly.", "It drifted closer.", "It moved in close, unhurried."]
+  greet: ["It greeted me, somehow, like an old friend.", "It seemed delighted that I'd come.", "There was a welcome in the way it turned to me."]
+  present_object: ["It held out an object that kept changing its number of sides.", "It showed me a small glowing object, offering it.", "It gave me something, an impossible little object I couldn't keep straight in my mind."]
+  show: ["It showed me how things fit together, and in the moment it made total sense.", "It was showing me something, very patiently.", "It opened up more of the place for me to see."]
+  work_on: ["It seemed busy with me, adjusting something I couldn't see.", "It was working on me, like a mechanic who knew exactly what to do.", "It fussed around me with total focus, not unkindly."]
+  transform: ["It kept changing shape while I watched.", "It turned into something else and then back again.", "It folded into a new form, then another."]
+  depart: ["Then it pulled back and was gone.", "Eventually it receded and faded out.", "It left, slowly, and I missed it immediately."]
+disposition:
+  benevolent: ["It felt kind, overwhelmingly kind.", "It was caring in a way that caught me off guard."]
+  playful: ["It was playful, almost teasing, like it found me funny.", "There was a lot of mischief in it."]
+  indifferent: ["It didn't seem very interested in me, just busy.", "It was polite but clearly had other things going on."]
+  stern: ["It felt stern for a moment, serious."]
+communication:
+  entity_to_user: ["It was telling me things without words.", "Information just poured out of it towards me."]
+  two_way: ["We were communicating, back and forth, without language.", "When I reacted, it reacted back."]
+  user_to_entity: ["I tried to tell it things; I don't know if it answered."]
+  none: ["There was no real communication, just mutual noticing."]
+presence:  # used when no beings were logged but the person still describes a presence (entity mention)
+  - "I had the strong sense of a presence there with me, even if I never saw anyone."
+  - "It felt like someone was there, just out of view."
+  - "There was a feeling of being watched by something kind, though I saw no one."
+inferred_vague:  # beings happened but were not remembered
+  - "I think there was a being there too, but I couldn't tell you what it looked like."
+  - "There may have been someone there; I have the outline of it and nothing else."

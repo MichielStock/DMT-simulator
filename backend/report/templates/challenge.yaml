@@ -1,0 +1,23 @@
+# Difficult passages (never graphic; ego dissolution only as outlines dissolving into geometry).
+start:
+  pressure:
+    - "Then for a while it turned. Everything closed in and got heavy and fast."
+    - "There was a stretch where it got too tight and too quick, like the place was leaning on me."
+  dissolution:
+    - "Then it got hard: my outline started coming apart into shapes, and I couldn't find the edges of me."
+    - "For a while it turned difficult. I felt myself coming undone into the structure around me."
+  pursuit:
+    - "Then it got uneasy, like something was following me through the rooms."
+    - "For a stretch it felt like something was chasing me through the place, never quite caught."
+  default:
+    - "Then for a while it turned difficult."
+during:
+  - "I held on, then remembered I could let go, and tried to."
+  - "I wanted out, honestly, for a minute there."
+  - "It was the opposite of the welcome I'd felt earlier."
+resolve:
+  - "And then it eased, all at once, like a knot coming loose, and everything went warm and slow."
+  - "It resolved, quite suddenly, into this relief that was almost funny."
+  - "Then it broke, gently, and I was floating in something warm and safe."
+gentle:
+  - "Once or twice there was a flicker of something uneasy, but it passed in seconds."

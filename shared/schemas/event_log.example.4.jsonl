@@ -1,0 +1,4 @@
+{"t_min": 0.0, "type": "hit", "payload": {"dose_step": "strong", "dose_rel": 2.0, "hold_fraction": 1.0, "n": 0}}
+{"t_min": 1.82, "type": "intensity_sample", "payload": {"plasma": 1.45, "body": 6.4, "visual": 5.99, "auditory": 3.9}}
+{"t_min": 1.9, "type": "hit_blocked", "payload": {"visual": 5.98}}
+{"t_min": 9.5, "type": "session_end", "payload": {"reason": "faded"}}

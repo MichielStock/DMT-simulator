@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "room": { "source": "photo", "image": "assets/room.jpg", "depth": "assets/room_depth.png" },
+  "answers": {
+    "clarity": 7,
+    "set": 2,
+    "absorption": [6, 8, 5],
+    "surrender": 6,
+    "intention": "curiosity",
+    "expectations": ["jesters", "machine_elves"]
+  },
+  "dose_step": "strong",
+  "hold_fraction": 1.0,
+  "options": { "difficult_passages": true, "eyes": "auto", "audio": true, "microphone": false, "live_diffusion": false },
+  "seed": 123456789
+}

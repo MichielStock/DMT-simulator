@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "seed": 8,
+  "pharmacology": {
+    "dose_step": "light",
+    "dose_rel": 1.0,
+    "hold_fraction": 1.0,
+    "sensitivity": 1.1,
+    "clearance": 1.0,
+    "params": {
+      "ka": 4.0,
+      "k10": 0.12,
+      "k12": 0.2,
+      "k21": 0.03,
+      "ke0": [
+        2.5,
+        1.2,
+        0.6
+      ],
+      "h": 2.0
+    }
+  },
+  "predicted": {
+    "peak_visual": 3.11,
+    "deepest_layer": "form_constants",
+    "minutes_above_8": 0.0
+  },
+  "palette": {
+    "name": "verdant",
+    "colours": [
+      "#03140a",
+      "#1f8a4c",
+      "#8fe36b",
+      "#f4e285",
+      "#2bb5a0"
+    ]
+  },
+  "room": {
+    "source": "photo",
+    "image": "assets/room.jpg",
+    "depth": "assets/room_depth.png"
+  },
+  "layers": {
+    "form_constants": {
+      "mode": "hexagons",
+      "wavelength": 0.8,
+      "spiral_bias": 0.4
+    },
+    "chrysanthemum": {
+      "groups": [
+        [
+          2,
+          3,
+          7
+        ]
+      ],
+      "kleinian": {
+        "trace_a": [
+          2.0,
+          0.0
+        ],
+        "trace_b": [
+          2.0,
+          0.0
+        ]
+      }
+    },
+    "waiting_room": {
+      "kind": "fractal"
+    }
+  },
+  "breakthrough": {
+    "reached": false,
+    "world": null,
+    "entities": [],
+    "message": {
+      "present": false,
+      "sealed_text": null,
+      "glyph_seed": 7
+    }
+  },
+  "challenge": {
+    "occurs": false,
+    "onset_offset_s": null,
+    "flavour": null
+  },
+  "report": {
+    "length_words": 300,
+    "profundity": false
+  },
+  "contingency": {
+    "breakthrough_assets": false
+  },
+  "provenance": {
+    "planner": "llm",
+    "images": "sdxl_lightning"
+  }
+}

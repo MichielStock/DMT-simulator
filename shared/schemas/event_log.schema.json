@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hyperspace.local/schemas/event_log.schema.json",
+  "title": "Hyperspace event log line",
+  "description": "One line of event_log.jsonl (BUILD.md section 6.3, CONTRACTS.md 'Events'). t_min is the model clock in minutes since the first hit.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["t_min", "type", "payload"],
+  "$defs": {
+    "layer": { "description": "Layer name in snake_case.", "enum": ["room", "form_constants", "chrysanthemum", "waiting_room", "breakthrough"] },
+    "intensity": { "type": "number", "minimum": 0, "maximum": 10 }
+  },
+  "properties": {
+    "t_min": { "description": "Model-clock minutes since the first hit (may be slightly negative for pre-hit events).", "type": "number", "minimum": -60 },
+    "type": {
+      "description": "Event type.",
+      "enum": ["hit", "hit_blocked", "intensity_sample", "layer_enter", "layer_exit", "entity_appear", "entity_behaviour", "message_shown", "challenge_start", "challenge_resolve", "let_go_held", "eyes_toggle", "exit_pressed", "frame_captured", "limiter_engaged", "session_end"]
+    },
+    "payload": { "description": "Type-specific payload.", "type": "object" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "type": { "const": "hit" } } },
+      "then": { "properties": { "payload": {
+        "required": ["dose_step", "dose_rel", "hold_fraction", "n"],
+        "properties": {
+          "dose_step": { "enum": ["threshold", "light", "strong", "breakthrough"] },
+          "dose_rel": { "type": "number", "minimum": 0, "maximum": 4 },
+          "hold_fraction": { "type": "number", "minimum": 0, "maximum": 1 },
+          "n": { "description": "0 for the first hit, 1-3 for repeat hits.", "type": "integer", "minimum": 0, "maximum": 3 }
+        } } } }
+    },
+    {
+      "if": { "properties": { "type": { "const": "hit_blocked" } } },
+      "then": { "properties": { "payload": { "properties": { "visual": { "$ref": "#/$defs/intensity" } } } } }
+    },
+    {
+      "if": { "properties": { "type": { "const": "intensity_sample" } } },
+      "then": { "properties": { "payload": {
+        "required": ["plasma", "body", "visual", "auditory"],
+        "properties": {
+          "plasma": { "type": "number", "minimum": 0 },
+          "body": { "$ref": "#/$defs/intensity" },
+          "visual": { "$ref": "#/$defs/intensity" },
+          "auditory": { "$ref": "#/$defs/intensity" }
+        } } } }
+    },
+    {
+      "if": { "properties": { "type": { "enum": ["layer_enter", "layer_exit"] } } },
+      "then": { "properties": { "payload": { "required": ["layer"], "properties": { "layer": { "$ref": "#/$defs/layer" } } } } }
+    },
+    {
+      "if": { "properties": { "type": { "const": "limiter_engaged" } } },
+      "then": { "properties": { "payload": { "properties": {
+        "kind": { "enum": ["general", "red"] },
+        "tiles": { "type": "integer", "minimum": 0 } } } } }
+    },
+    {
+      "if": { "properties": { "type": { "const": "session_end" } } },
+      "then": { "properties": { "payload": { "required": ["reason"], "properties": { "reason": { "enum": ["faded", "escape", "cap"] } } } } }
+    }
+  ]
+}

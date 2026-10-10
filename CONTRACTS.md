@@ -81,3 +81,12 @@ Profiles: `tests/e2e/profiles/neutral.json` is a full `intake.json` with neutral
 `{"t_min": float, "type": string, "payload": object}`; types exactly as BUILD.md §6.3. `intensity_sample` payload:
 `{ "plasma", "body", "visual", "auditory" }`. `layer_enter`/`layer_exit` payload `{ "layer": name }`. `hit` payload
 `{ "dose_step", "dose_rel", "hold_fraction", "n": 0|1|2|3 }`. `session_end` payload `{ "reason": "faded"|"escape"|"cap" }`.
+
+## Amendments recorded at M3 integration (details in NOTES.md)
+- Schema files are `shared/schemas/<name>.schema.json` (incl. `expansion.schema.json`), D-C1.
+- `PharmacologyModel` starts with no dose; the first hit is `addHit` too; extra members `canHit()`, `repeatHitsUsed/Remaining`, `depot`, `subSteps`, `onSubStep` (D-C7).
+- `computeLayerWeights` also returns `roomDistortion`, `fieldModulation`, `vEff`, `breakthroughLatched`; breakthrough fades via `advanceFade(prev, target, wallDtSec)` (D-C8).
+- `SafetyLimiter(renderer, { now }?)` with a read-only `status`; `RenderPipeline(canvas, { debug, renderer?, maxPixelRatio? })`; layers write LINEAR RGB into the scene target and never clear it (S4).
+- `layer_enter` fires when the entry window is fully crossed (form_constants 3.0, chrysanthemum 5.2, waiting_room 7.6, breakthrough latch 8.0), `layer_exit` on the 0.01 weight crossing (D-F1).
+- `window.__hyperspace` also has `sessionId`, `audioContext`, `drawCurve`, `audio?.exitTone()` (D-F integration notes).
+- Waiting-room kinds `kifs|mandelbox`; `challenge.onset_offset_s` is seconds after the predicted peak (B2, B3).

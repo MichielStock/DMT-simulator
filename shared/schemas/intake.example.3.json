@@ -1,0 +1,15 @@
+{
+  "room": { "source": "default", "image": null, "depth": null },
+  "answers": {
+    "clarity": 3,
+    "set": 4,
+    "absorption": [2, 3, 4],
+    "surrender": 4,
+    "intention": "recreation",
+    "expectations": []
+  },
+  "dose_step": "threshold",
+  "hold_fraction": 1.0,
+  "options": { "difficult_passages": true, "eyes": "open", "audio": false, "microphone": false, "live_diffusion": true },
+  "seed": 0
+}

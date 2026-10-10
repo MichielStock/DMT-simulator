@@ -1,0 +1,6 @@
+{"t_min": 0.0, "type": "hit", "payload": {"dose_step": "light", "dose_rel": 0.5, "hold_fraction": 0.5, "n": 0}}
+{"t_min": 0.3, "type": "layer_enter", "payload": {"layer": "room"}}
+{"t_min": 6.0, "type": "hit", "payload": {"dose_step": "light", "dose_rel": 1.0, "hold_fraction": 1.0, "n": 1}}
+{"t_min": 6.2, "type": "limiter_engaged", "payload": {"kind": "red", "tiles": 30}}
+{"t_min": 14.0, "type": "layer_exit", "payload": {"layer": "room"}}
+{"t_min": 14.0, "type": "session_end", "payload": {"reason": "faded"}}

@@ -1,0 +1,151 @@
+{
+  "version": 1,
+  "seed": 2024,
+  "pharmacology": {
+    "dose_step": "strong",
+    "dose_rel": 2.0,
+    "hold_fraction": 1.0,
+    "sensitivity": 1.0,
+    "clearance": 1.0,
+    "params": {
+      "ka": 4.0,
+      "k10": 0.12,
+      "k12": 0.2,
+      "k21": 0.03,
+      "ke0": [
+        2.5,
+        1.2,
+        0.6
+      ],
+      "h": 2.0
+    }
+  },
+  "predicted": {
+    "peak_visual": 5.99,
+    "deepest_layer": "chrysanthemum",
+    "minutes_above_8": 0.0
+  },
+  "palette": {
+    "name": "neon",
+    "colours": [
+      "#0a0021",
+      "#ff2fd1",
+      "#2ff3ff",
+      "#b6ff3b",
+      "#7a3cff"
+    ]
+  },
+  "room": {
+    "source": "panorama",
+    "image": "assets/room.jpg",
+    "depth": "assets/room_depth.png"
+  },
+  "layers": {
+    "form_constants": {
+      "mode": "hexagons",
+      "wavelength": 1.2,
+      "spiral_bias": 0.1
+    },
+    "chrysanthemum": {
+      "groups": [
+        [
+          2,
+          4,
+          5
+        ]
+      ],
+      "kleinian": {
+        "trace_a": [
+          2.0,
+          0.0
+        ],
+        "trace_b": [
+          2.0,
+          0.0
+        ]
+      }
+    },
+    "waiting_room": {
+      "kind": "mandelbox"
+    }
+  },
+  "breakthrough": {
+    "reached": false,
+    "world": {
+      "category": "geometric_chamber",
+      "prompt": "an endless chamber of folding luminous polyhedra, jewel-toned light, intricate and alive, no text",
+      "image": "assets/world_0.png",
+      "procedural": false
+    },
+    "entities": [
+      {
+        "type": "luminous_feminine",
+        "label": "spirit",
+        "attributes": {
+          "conscious": true,
+          "intelligent": true,
+          "benevolent": true,
+          "sacred": true
+        },
+        "disposition": "benevolent",
+        "communication": "entity_to_user",
+        "behaviours": [
+          "approach",
+          "show",
+          "depart"
+        ],
+        "sprites": [
+          "assets/entity_0_a.png",
+          "assets/entity_0_b.png",
+          "assets/entity_0_c.png"
+        ],
+        "procedural": false,
+        "agency": true
+      },
+      {
+        "type": "deity",
+        "label": "being",
+        "attributes": {
+          "conscious": true,
+          "intelligent": true,
+          "benevolent": true,
+          "sacred": true
+        },
+        "disposition": "benevolent",
+        "communication": "entity_to_user",
+        "behaviours": [
+          "greet",
+          "work_on",
+          "depart"
+        ],
+        "sprites": [
+          "assets/entity_1_a.png",
+          "assets/entity_1_b.png",
+          "assets/entity_1_c.png"
+        ],
+        "procedural": false
+      }
+    ],
+    "message": {
+      "present": true,
+      "sealed_text": "Care can be very large and very quiet at the same time.",
+      "glyph_seed": 9
+    }
+  },
+  "challenge": {
+    "occurs": true,
+    "onset_offset_s": -10.0,
+    "flavour": "pressure"
+  },
+  "report": {
+    "length_words": 210,
+    "profundity": false
+  },
+  "contingency": {
+    "breakthrough_assets": true
+  },
+  "provenance": {
+    "planner": "template",
+    "images": "sdxl_turbo"
+  }
+}

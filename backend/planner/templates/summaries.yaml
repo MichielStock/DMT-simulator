@@ -1,0 +1,13 @@
+# Private summaries for the report writer (never shown during the trip). Placeholders:
+# {step} dose step, {world} world description, {beings} beings phrase, {message} message phrase, {challenge} challenge phrase.
+templates:
+  - "A simulated {step} session. {world} {beings} {message} {challenge}"
+  - "Plan for a {step} session: {world} {beings} {message} {challenge}"
+  - "Simulated session at the {step} step. {world} {beings} {message} {challenge}"
+beings_none: "No beings were planned."
+beings_one: "One {type} being, {disposition}, communicating {communication}."
+beings_many: "{n} beings led by a {type}, {disposition}, communicating {communication}."
+message_yes: "A sealed message about {theme}."
+message_no: "No message."
+challenge_yes: "A difficult passage of the {flavour} kind after the peak, resolving with relief."
+challenge_no: "No difficult passage."

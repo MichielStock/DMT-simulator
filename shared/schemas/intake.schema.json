@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hyperspace.local/schemas/intake.schema.json",
+  "title": "Hyperspace intake",
+  "description": "Everything the intake collects before the hit (BUILD.md sections 6.1 and 8). Doses are relative steps only, never real amounts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["room", "answers", "dose_step", "hold_fraction", "options", "seed"],
+  "properties": {
+    "version": { "description": "Contract version; 1 when present.", "const": 1 },
+    "room": {
+      "description": "Room source (section 8.1). Paths are relative to the session folder.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source"],
+      "properties": {
+        "source": { "description": "photo, phone panorama (2:1 equirectangular) or the built-in default room.", "enum": ["photo", "panorama", "default"] },
+        "image": { "description": "Stored room image, e.g. assets/room.jpg; null or absent for the default room.", "type": ["string", "null"] },
+        "depth": { "description": "Depth map, e.g. assets/room_depth.png; null or absent when not computed yet.", "type": ["string", "null"] }
+      }
+    },
+    "answers": {
+      "description": "Intake answers (section 8.2) that become hidden variables.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["clarity", "set", "absorption", "surrender", "intention", "expectations"],
+      "properties": {
+        "clarity": { "description": "Intention clarity, 0-10.", "type": "number", "minimum": 0, "maximum": 10 },
+        "set": { "description": "Mood now, -5 to +5.", "type": "number", "minimum": -5, "maximum": 5 },
+        "absorption": {
+          "description": "Three absorption-style items, 0-10 each; the planner uses their mean.",
+          "type": "array", "minItems": 3, "maxItems": 3,
+          "items": { "type": "number", "minimum": 0, "maximum": 10 }
+        },
+        "surrender": { "description": "Preoccupied (0) to ready to let go (10).", "type": "number", "minimum": 0, "maximum": 10 },
+        "intention": { "description": "Main reason for the session.", "enum": ["curiosity", "recreation", "reflection", "spiritual"] },
+        "expectations": {
+          "description": "Motifs seen before (multi-select); each multiplies the matching entity weight by 1.5. Empty for none.",
+          "type": "array", "uniqueItems": true,
+          "items": { "enum": ["jesters", "machine_elves", "aliens", "luminous_feminine", "insectoid"] }
+        }
+      }
+    },
+    "dose_step": { "description": "Named dose step (section 7.2); default strong.", "enum": ["threshold", "light", "strong", "breakthrough"] },
+    "hold_fraction": { "description": "min(1, hold_seconds / 4) of the hit (section 8.4); 1 before the hit has happened.", "type": "number", "minimum": 0, "maximum": 1 },
+    "options": {
+      "description": "Session options (section 8.3).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["difficult_passages", "eyes", "audio", "microphone", "live_diffusion"],
+      "properties": {
+        "difficult_passages": { "description": "true: difficult passages may be sampled; false: gentle mode.", "type": "boolean" },
+        "eyes": { "description": "Eyes mode: auto fades to eyes-closed at visual intensity 3.", "enum": ["auto", "open", "closed"] },
+        "audio": { "description": "Synthesised audio on.", "type": "boolean" },
+        "microphone": { "description": "Microphone modulation (off by default).", "type": "boolean" },
+        "live_diffusion": { "description": "Optional live diffusion (off by default).", "type": "boolean" }
+      }
+    },
+    "seed": { "description": "Session random seed (always recorded).", "type": "integer", "minimum": 0 }
+  }
+}

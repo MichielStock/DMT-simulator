@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "seed": 5,
+  "pharmacology": {
+    "dose_step": "threshold",
+    "dose_rel": 0.4,
+    "hold_fraction": 1.0,
+    "sensitivity": 0.8,
+    "clearance": 1.1,
+    "params": {
+      "ka": 4.0,
+      "k10": 0.12,
+      "k12": 0.2,
+      "k21": 0.03,
+      "ke0": [
+        2.5,
+        1.2,
+        0.6
+      ],
+      "h": 2.0
+    }
+  },
+  "predicted": {
+    "peak_visual": 0.36,
+    "deepest_layer": "none",
+    "minutes_above_8": 0.0
+  },
+  "palette": {
+    "name": "lunar",
+    "colours": [
+      "#05070f",
+      "#3a4a7a",
+      "#9fb4e8",
+      "#e6ecff",
+      "#5fd3c6"
+    ]
+  },
+  "room": {
+    "source": "default",
+    "image": null,
+    "depth": null
+  },
+  "layers": {
+    "form_constants": {
+      "mode": "stripes",
+      "wavelength": 1.0,
+      "spiral_bias": 0.0
+    },
+    "chrysanthemum": {
+      "groups": [
+        [
+          2,
+          3,
+          7
+        ]
+      ],
+      "kleinian": {
+        "trace_a": [
+          2.0,
+          0.0
+        ],
+        "trace_b": [
+          2.0,
+          0.0
+        ]
+      }
+    },
+    "waiting_room": {
+      "kind": "hyperbolic"
+    }
+  },
+  "breakthrough": {
+    "reached": false,
+    "world": null,
+    "entities": [],
+    "message": {
+      "present": false,
+      "sealed_text": null,
+      "glyph_seed": 7
+    }
+  },
+  "challenge": {
+    "occurs": false,
+    "onset_offset_s": null,
+    "flavour": null
+  },
+  "report": {
+    "length_words": 120,
+    "profundity": false
+  },
+  "contingency": {
+    "breakthrough_assets": false
+  },
+  "provenance": {
+    "planner": "template",
+    "images": "procedural"
+  }
+}

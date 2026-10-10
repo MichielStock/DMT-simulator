@@ -1,5 +1,8 @@
 import { defineConfig } from '@playwright/test';
 
+// E2E_BASE_URL (e.g. the Vite dev server) overrides the back end and skips the webServer.
+const BASE = process.env.E2E_BASE_URL;
+
 // End-to-end and capture tests. The server (back end + built front end) is started by
 // ../run.sh --serve-only unless one is already listening on 8765 (verify_all.sh starts it).
 export default defineConfig({
@@ -11,7 +14,9 @@ export default defineConfig({
   retries: 0,
   reporter: [['list'], ['json', { outputFile: '../verification/e2e-results.json' }]],
   use: {
-    baseURL: 'http://127.0.0.1:8765',
+    baseURL: BASE ?? 'http://127.0.0.1:8765',
+    // Headless chromium (headless shell) gets the real GPU here (ANGLE OpenGL on the RTX 4090, WebGL2),
+    // checked 2026-10-10; the real-time safety captures switch to headed Chrome themselves (NOTES S6).
     headless: true,
     viewport: { width: 1280, height: 720 },
     launchOptions: {
@@ -19,7 +24,7 @@ export default defineConfig({
              '--enable-unsafe-webgpu', '--autoplay-policy=no-user-gesture-required'],
     },
   },
-  webServer: {
+  webServer: BASE ? undefined : {
     command: 'cd .. && ./run.sh --serve-only',
     url: 'http://127.0.0.1:8765/api/status',
     reuseExistingServer: true,

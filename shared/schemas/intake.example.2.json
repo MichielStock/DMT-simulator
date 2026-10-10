@@ -1,0 +1,15 @@
+{
+  "room": { "source": "panorama", "image": "assets/room.jpg", "depth": "assets/room_depth.png" },
+  "answers": {
+    "clarity": 9,
+    "set": -1,
+    "absorption": [9, 7, 8],
+    "surrender": 8,
+    "intention": "spiritual",
+    "expectations": ["aliens", "luminous_feminine", "insectoid"]
+  },
+  "dose_step": "breakthrough",
+  "hold_fraction": 0.85,
+  "options": { "difficult_passages": false, "eyes": "closed", "audio": true, "microphone": true, "live_diffusion": false },
+  "seed": 42
+}

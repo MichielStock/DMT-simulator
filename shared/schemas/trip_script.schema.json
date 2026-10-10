@@ -1,0 +1,207 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hyperspace.local/schemas/trip_script.schema.json",
+  "title": "Hyperspace trip script",
+  "description": "Planner output (BUILD.md section 6.2). Every listed key is typed strictly; extra keys are allowed at the top level and inside entities for forward-compatible planner additions. Doses are model units relative to the half-effect concentration, never real amounts.",
+  "type": "object",
+  "required": ["version", "seed", "pharmacology", "predicted", "palette", "room", "layers", "breakthrough", "challenge", "report", "contingency", "provenance"],
+  "$defs": {
+    "layer_name": { "description": "Layer names used for 'deepest' (CONTRACTS.md).", "enum": ["none", "onset", "form_constants", "chrysanthemum", "waiting_room", "breakthrough"] },
+    "behaviour": { "description": "Entity behaviour beat (section 11.7).", "enum": ["approach", "greet", "present_object", "show", "work_on", "transform", "depart"] },
+    "complex": { "description": "Complex number [re, im].", "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" } },
+    "beat": {
+      "description": "One timed behaviour beat (optional planner addition from the expansion).",
+      "type": "object",
+      "required": ["behaviour", "at_s"],
+      "properties": {
+        "behaviour": { "$ref": "#/$defs/behaviour" },
+        "at_s": { "description": "Seconds after the entity appears.", "type": "number", "minimum": 0 },
+        "note": { "description": "Short description of the beat for the director and report.", "type": "string" }
+      }
+    },
+    "entity": {
+      "description": "One being of the breakthrough.",
+      "type": "object",
+      "required": ["type", "label", "attributes", "disposition", "communication", "behaviours", "sprites", "procedural"],
+      "properties": {
+        "type": { "description": "Entity type (section 9.1 step 4).", "enum": ["luminous_feminine", "deity", "alien", "creature_reptilian", "creature_tentacled", "creature_insectoid", "creature_feline", "machine_elf", "mythological", "jester", "living_geometry"] },
+        "label": { "description": "Label (section 9.1 step 5).", "enum": ["being", "guide", "spirit", "alien", "helper"] },
+        "attributes": {
+          "description": "Attributes (section 9.1 step 6).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["conscious", "intelligent", "benevolent", "sacred"],
+          "properties": {
+            "conscious": { "type": "boolean" },
+            "intelligent": { "type": "boolean" },
+            "benevolent": { "type": "boolean" },
+            "sacred": { "type": "boolean" },
+            "agency": { "type": "boolean" }
+          }
+        },
+        "disposition": { "description": "Disposition; stern only inside difficult passages.", "enum": ["benevolent", "playful", "indifferent", "stern"] },
+        "communication": { "description": "Direction of communication (rendered as glyphs).", "enum": ["entity_to_user", "two_way", "user_to_entity", "none"] },
+        "behaviours": { "description": "Ordered behaviour beats.", "type": "array", "items": { "$ref": "#/$defs/behaviour" } },
+        "sprites": { "description": "Three RGBA sprite variants (a, b, c), relative to the session folder; empty when procedural.", "type": "array", "maxItems": 3, "items": { "type": "string" } },
+        "procedural": { "description": "true: glyph being instead of generated sprites.", "type": "boolean" },
+        "prompts": { "description": "Optional: the three image prompts used for the sprites.", "type": "array", "maxItems": 3, "items": { "type": "string" } },
+        "beats": { "description": "Optional: timed behaviour beats from the expansion.", "type": "array", "items": { "$ref": "#/$defs/beat" } }
+      }
+    }
+  },
+  "properties": {
+    "version": { "description": "Contract version.", "const": 1 },
+    "seed": { "description": "Session seed.", "type": "integer", "minimum": 0 },
+    "pharmacology": {
+      "description": "Pharmacology for this session (section 7).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dose_step", "dose_rel", "hold_fraction", "sensitivity", "clearance", "params"],
+      "properties": {
+        "dose_step": { "enum": ["threshold", "light", "strong", "breakthrough"] },
+        "dose_rel": { "description": "Absorbed dose in model units = step dose x hold_fraction.", "type": "number", "minimum": 0, "maximum": 4 },
+        "hold_fraction": { "type": "number", "minimum": 0, "maximum": 1 },
+        "sensitivity": { "type": "number", "exclusiveMinimum": 0 },
+        "clearance": { "type": "number", "exclusiveMinimum": 0 },
+        "params": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ka", "k10", "k12", "k21", "ke0", "h"],
+          "properties": {
+            "ka": { "type": "number", "exclusiveMinimum": 0 },
+            "k10": { "type": "number", "exclusiveMinimum": 0 },
+            "k12": { "type": "number", "minimum": 0 },
+            "k21": { "type": "number", "minimum": 0 },
+            "ke0": { "description": "Effect-site rates: body, visual, auditory.", "type": "array", "minItems": 3, "maxItems": 3, "items": { "type": "number", "exclusiveMinimum": 0 } },
+            "h": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        }
+      }
+    },
+    "predicted": {
+      "description": "Prediction from the reference model for the first hit only.",
+      "type": "object",
+      "required": ["peak_visual", "deepest_layer", "minutes_above_8"],
+      "properties": {
+        "peak_visual": { "type": "number", "minimum": 0, "maximum": 10 },
+        "deepest_layer": { "$ref": "#/$defs/layer_name" },
+        "minutes_above_8": { "type": "number", "minimum": 0 },
+        "minutes_above_1": { "type": "number", "minimum": 0 },
+        "peak_time_min": { "type": "number", "minimum": 0 }
+      }
+    },
+    "palette": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "colours"],
+      "properties": {
+        "name": { "enum": ["jewel", "neon", "ember", "lunar", "verdant"] },
+        "colours": { "type": "array", "minItems": 2, "items": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" } }
+      }
+    },
+    "room": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source"],
+      "properties": {
+        "source": { "enum": ["photo", "panorama", "default"] },
+        "image": { "type": ["string", "null"] },
+        "depth": { "type": ["string", "null"] }
+      }
+    },
+    "layers": {
+      "type": "object",
+      "required": ["form_constants", "chrysanthemum", "waiting_room"],
+      "properties": {
+        "form_constants": {
+          "type": "object",
+          "required": ["mode", "wavelength", "spiral_bias"],
+          "properties": {
+            "mode": { "description": "Neural-field planform.", "enum": ["stripes", "hexagons", "mixed"] },
+            "wavelength": { "type": "number", "exclusiveMinimum": 0 },
+            "spiral_bias": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "chrysanthemum": {
+          "type": "object",
+          "required": ["groups", "kleinian"],
+          "properties": {
+            "groups": { "description": "Hyperbolic triangle groups (p, q, r) with 1/p + 1/q + 1/r < 1.", "type": "array", "minItems": 1, "items": { "type": "array", "minItems": 3, "maxItems": 3, "items": { "type": "integer", "minimum": 2 } } },
+            "kleinian": {
+              "type": "object",
+              "required": ["trace_a", "trace_b"],
+              "properties": { "trace_a": { "$ref": "#/$defs/complex" }, "trace_b": { "$ref": "#/$defs/complex" } }
+            }
+          }
+        },
+        "waiting_room": {
+          "type": "object",
+          "required": ["kind"],
+          "properties": { "kind": { "enum": ["fractal", "mandelbox", "kifs", "hyperbolic"] } }
+        }
+      }
+    },
+    "breakthrough": {
+      "type": "object",
+      "required": ["reached", "world", "entities", "message"],
+      "properties": {
+        "reached": { "description": "Predicted to reach breakthrough with the first hit.", "type": "boolean" },
+        "world": {
+          "description": "World backdrop; null only when no breakthrough assets were planned.",
+          "type": ["object", "null"],
+          "required": ["category", "prompt", "image", "procedural"],
+          "properties": {
+            "category": { "enum": ["geometric_chamber", "dome_temple", "infinite_hall", "workshop", "organic_jungle", "cosmic_space", "carnival"] },
+            "prompt": { "type": "string" },
+            "image": { "type": ["string", "null"] },
+            "images": { "description": "Optional: all backdrops (1-3).", "type": "array", "maxItems": 3, "items": { "type": "string" } },
+            "procedural": { "type": "boolean" }
+          }
+        },
+        "entities": { "type": "array", "maxItems": 12, "items": { "$ref": "#/$defs/entity" } },
+        "message": {
+          "type": "object",
+          "required": ["present", "sealed_text", "glyph_seed"],
+          "properties": {
+            "present": { "type": "boolean" },
+            "sealed_text": { "description": "Abstract, non-directive message; shown only in the report.", "type": ["string", "null"] },
+            "glyph_seed": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "challenge": {
+      "description": "Difficult passage; never occurs in gentle mode.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["occurs", "onset_offset_s", "flavour"],
+      "properties": {
+        "occurs": { "type": "boolean" },
+        "onset_offset_s": { "description": "Seconds relative to the predicted peak; null when it does not occur.", "type": ["number", "null"] },
+        "flavour": { "enum": ["pressure", "dissolution", "pursuit", null] }
+      }
+    },
+    "report": {
+      "type": "object",
+      "required": ["length_words", "profundity"],
+      "properties": {
+        "length_words": { "type": "integer", "minimum": 120, "maximum": 900 },
+        "profundity": { "type": "boolean" },
+        "private_summary": { "description": "Optional: the expansion's private summary for the report writer.", "type": "string" }
+      }
+    },
+    "contingency": {
+      "type": "object",
+      "required": ["breakthrough_assets"],
+      "properties": { "breakthrough_assets": { "type": "boolean" } }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["planner", "images"],
+      "properties": {
+        "planner": { "enum": ["llm", "template"] },
+        "images": { "enum": ["sdxl_lightning", "sdxl_turbo", "procedural"] }
+      }
+    }
+  }
+}

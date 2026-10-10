@@ -1,0 +1,94 @@
+# Phrase banks for breakthrough worlds (BUILD.md §9.3). Placeholders: {colours} palette words, {style} style tail.
+# Content limits of BUILD.md §4.3 apply to every line.
+style: "self-luminous, jewelled, intricate, hyper-saturated, alive, more dimensions than it should have, no text, no letters"
+palette_words:
+  jewel: "amethyst, ruby and deep emerald"
+  neon: "electric magenta, cyan and violet"
+  ember: "amber, copper and garnet"
+  lunar: "sapphire, silver-blue and pearl"
+  verdant: "emerald, chartreuse and honey gold"
+categories:
+  geometric_chamber:
+    prompts:
+      - "a vast faceted chamber whose walls are nested polyhedra folding into each other, glowing in {colours}, {style}"
+      - "an interior of interlocking crystalline lattices that recede in every direction at once, lit from within in {colours}, {style}"
+      - "a hall of rotating mandala walls with deep recursive alcoves, panels of {colours} light, {style}"
+      - "a room built from slowly turning hyperbolic tiles that bend away into impossible corners, {colours}, {style}"
+      - "a kaleidoscopic vault of mirrored facets reflecting patterns that are not there, saturated {colours}, {style}"
+      - "a cubic chamber that keeps unfolding new inner rooms, every edge traced in {colours} light, {style}"
+    descriptions:
+      - "A huge faceted chamber that kept unfolding into more rooms than it could hold."
+      - "A room made of turning geometry, every wall a window into another wall."
+      - "An enclosed space of nested shapes, bright and strangely orderly."
+  dome_temple:
+    prompts:
+      - "an immense domed sanctuary of radiant arches and jewelled columns, abstract ornament in {colours}, {style}"
+      - "a temple-like dome whose ceiling is a turning rose window of pure light, {colours}, {style}"
+      - "concentric domes stacked inside one another, each inlaid with glowing abstract mosaics in {colours}, {style}"
+      - "a circular hall of soaring arches opening onto a sky of ornament, lit in {colours}, {style}"
+      - "a cathedral-scale space of abstract filigree and floating galleries, no symbols of any real faith, {colours}, {style}"
+      - "a great luminous cupola of interlaced ribs and honeycomb vaults, {colours}, {style}"
+    descriptions:
+      - "A domed space like a temple with no religion, all arches and light."
+      - "An enormous dome whose ceiling turned slowly like a jewelled wheel."
+      - "Arches inside arches, glowing, and very quiet."
+  infinite_hall:
+    prompts:
+      - "an endless corridor of glowing pillars and repeating galleries vanishing into the distance, {colours}, {style}"
+      - "a city of impossible towers and bridges that fold back into themselves, lit in {colours}, {style}"
+      - "an infinite library-like hall of luminous shelves holding shapes instead of books, {colours}, {style}"
+      - "rows of radiant structures stretching forever under a ceiling of moving ornament, {colours}, {style}"
+      - "a boundless arcade of arches receding in all directions, every surface glittering in {colours}, {style}"
+      - "towering crystalline buildings stacked into the sky like a vertical maze, {colours}, {style}"
+    descriptions:
+      - "A hall that went on forever, structures repeating into the distance."
+      - "Something like a city, towers and bridges folding over each other."
+      - "Endless galleries, all lit from inside."
+  workshop:
+    prompts:
+      - "a vast luminous workshop full of intricate self-assembling machines and floating tools, {colours}, {style}"
+      - "a machine space of interlocking gears made of light and glass, constantly rebuilding itself, {colours}, {style}"
+      - "a busy atelier of glowing contraptions and half-finished geometric objects, {colours}, {style}"
+      - "an engine room of crystalline clockwork and humming lattices, lit in {colours}, {style}"
+      - "a laboratory of shifting instruments and orbiting jewelled components, {colours}, {style}"
+      - "a factory of light where shapes are being woven on enormous looms, {colours}, {style}"
+    descriptions:
+      - "A workshop full of machines that were building themselves."
+      - "Something like an engine room made of glass and light, very busy."
+      - "A place where shapes were getting made, and I had walked in on it."
+  organic_jungle:
+    prompts:
+      - "a dense luminous jungle of glowing fronds, spiralling vines and jewelled flowers, {colours}, {style}"
+      - "an alien garden of translucent plants and fractal ferns breathing slowly, {colours}, {style}"
+      - "a canopy of radiant leaves and hanging seed-lanterns over a soft glowing floor, {colours}, {style}"
+      - "an overgrown landscape where every stem branches into smaller glowing stems, {colours}, {style}"
+      - "a coral-like forest of bioluminescent forms swaying in a warm light, {colours}, {style}"
+      - "a lush valley of iridescent petals and curling tendrils of light, {colours}, {style}"
+    descriptions:
+      - "A glowing jungle, everything growing and branching while I watched."
+      - "A garden of plants that seemed to breathe, warm and dense."
+      - "A forest of soft light, fronds curling into smaller fronds."
+  cosmic_space:
+    prompts:
+      - "an open cosmos of glowing nebula ribbons and orbiting geometric worlds, {colours}, {style}"
+      - "a starfield folded into a vast spiralling lattice, galaxies like jewels, {colours}, {style}"
+      - "a boundless space of floating luminous platforms and slowly turning planets of glass, {colours}, {style}"
+      - "a deep sky of interlaced light rings and drifting crystalline moons, {colours}, {style}"
+      - "an observatory-like void where constellations rearrange into patterns, {colours}, {style}"
+      - "the inside of a radiant star cloud, layered veils of light, {colours}, {style}"
+    descriptions:
+      - "Open space, but full, with rings of light and slow turning worlds."
+      - "A sky with no ground, stars arranged like a pattern."
+      - "A vast dark full of drifting glass moons."
+  carnival:
+    prompts:
+      - "a radiant carnival of spinning pavilions, striped tents and glowing lanterns, {colours}, {style}"
+      - "a circus ring under an enormous canopy of light, everything turning and bright, {colours}, {style}"
+      - "a funfair of impossible rides made of jewelled geometry, {colours}, {style}"
+      - "a playful festival space with ribbons, banners without writing, and turning wheels of light, {colours}, {style}"
+      - "a hall of mirrors and carousels that loop through each other, {colours}, {style}"
+      - "a big top whose canvas opens onto more big tops, lit in {colours}, {style}"
+    descriptions:
+      - "A carnival, honestly, all spinning tents and lanterns."
+      - "Something like a circus that had been folded through itself."
+      - "A bright fairground of rides that turned in too many directions."

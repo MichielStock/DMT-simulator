@@ -1,0 +1,191 @@
+{
+ "version": 1,
+ "seed": 20261010,
+ "pharmacology": {
+  "dose_step": "breakthrough",
+  "dose_rel": 4.0,
+  "hold_fraction": 1.0,
+  "sensitivity": 1.0,
+  "clearance": 1.0,
+  "params": {
+   "ka": 4.0,
+   "k10": 0.12,
+   "k12": 0.2,
+   "k21": 0.03,
+   "ke0": [
+    2.5,
+    1.2,
+    0.6
+   ],
+   "h": 2.0
+  }
+ },
+ "predicted": {
+  "peak_visual": 8.567,
+  "deepest_layer": "breakthrough",
+  "minutes_above_8": 2.192,
+  "minutes_above_1": 11.123,
+  "peak_time_min": 1.8217
+ },
+ "palette": {
+  "name": "verdant",
+  "colours": [
+   "#03140c",
+   "#0b5d3b",
+   "#2fbf71",
+   "#c3f73a",
+   "#f0a202",
+   "#6a4c93"
+  ]
+ },
+ "room": {
+  "source": "photo",
+  "image": "assets/room.jpg",
+  "depth": "assets/room_depth.png"
+ },
+ "layers": {
+  "form_constants": {
+   "mode": "hexagons",
+   "wavelength": 1.1343,
+   "spiral_bias": 0.0805
+  },
+  "chrysanthemum": {
+   "groups": [
+    [
+     2,
+     3,
+     7
+    ],
+    [
+     2,
+     5,
+     5
+    ],
+    [
+     3,
+     3,
+     4
+    ]
+   ],
+   "kleinian": {
+    "trace_a": [
+     2.2798,
+     0.1136
+    ],
+    "trace_b": [
+     2.0876,
+     0.1554
+    ]
+   }
+  },
+  "waiting_room": {
+   "kind": "mandelbox"
+  }
+ },
+ "breakthrough": {
+  "reached": true,
+  "world": {
+   "category": "carnival",
+   "prompt": "a funfair of impossible rides made of jewelled geometry, emerald, chartreuse and honey gold, self-luminous, jewelled, intricate, hyper-saturated, alive, more dimensions than it should have, no text, no letters",
+   "image": null,
+   "images": [],
+   "procedural": true,
+   "prompts": [
+    "a funfair of impossible rides made of jewelled geometry, emerald, chartreuse and honey gold, self-luminous, jewelled, intricate, hyper-saturated, alive, more dimensions than it should have, no text, no letters",
+    "a circus ring under an enormous canopy of light, everything turning and bright, emerald, chartreuse and honey gold, self-luminous, jewelled, intricate, hyper-saturated, alive, more dimensions than it should have, no text, no letters"
+   ],
+   "description": "A carnival, honestly, all spinning tents and lanterns."
+  },
+  "entities": [
+   {
+    "type": "jester",
+    "label": "guide",
+    "attributes": {
+     "conscious": true,
+     "intelligent": true,
+     "benevolent": true,
+     "sacred": false,
+     "agency": true
+    },
+    "disposition": "playful",
+    "communication": "two_way",
+    "behaviours": [
+     "approach",
+     "greet",
+     "present_object",
+     "transform",
+     "depart"
+    ],
+    "sprites": [],
+    "procedural": true,
+    "prompts": [
+     "a mischievous harlequin presence whose diamond pattern keeps rearranging, emerald, chartreuse and honey gold, bowing, isolated on a plain dark background, no text, no letters",
+     "a mischievous harlequin presence whose diamond pattern keeps rearranging, emerald, chartreuse and honey gold, juggling glowing shapes, isolated on a plain dark background, no text, no letters",
+     "a mischievous harlequin presence whose diamond pattern keeps rearranging, emerald, chartreuse and honey gold, costume rearranging into patterns, isolated on a plain dark background, no text, no letters"
+    ],
+    "beats": [
+     {
+      "behaviour": "approach",
+      "at_s": 0.0,
+      "note": "arrives as if it had been waiting"
+     },
+     {
+      "behaviour": "greet",
+      "at_s": 6.0,
+      "note": "tilts towards the viewer in a kind of welcome"
+     },
+     {
+      "behaviour": "present_object",
+      "at_s": 11.0,
+      "note": "unfolds an intricate shape between itself and the viewer"
+     },
+     {
+      "behaviour": "transform",
+      "at_s": 20.0,
+      "note": "becomes geometry, then becomes itself again"
+     },
+     {
+      "behaviour": "depart",
+      "at_s": 28.0,
+      "note": "recedes into the world, fading"
+     }
+    ],
+    "appearance": "A jester, really, in a diamond suit that kept rearranging.",
+    "labels": [
+     "being",
+     "guide"
+    ],
+    "arrival_s": 12.0
+   }
+  ],
+  "message": {
+   "present": true,
+   "sealed_text": "The shapes were laughing, and the laugh included me.",
+   "glyph_seed": 42,
+   "theme": "play"
+  }
+ },
+ "challenge": {
+  "occurs": false,
+  "onset_offset_s": null,
+  "flavour": null
+ },
+ "report": {
+  "length_words": 311,
+  "profundity": false,
+  "private_summary": "Simulated session at the breakthrough step. A carnival, honestly, all spinning tents and lanterns. One jester being, playful, communicating both ways. A sealed message about play. No difficult passage."
+ },
+ "contingency": {
+  "breakthrough_assets": true
+ },
+ "provenance": {
+  "planner": "template",
+  "images": "procedural"
+ },
+ "encounter": {
+  "occurs": true,
+  "contingent": false,
+  "layer": "breakthrough"
+ },
+ "gentle": false
+}

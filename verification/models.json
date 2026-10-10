@@ -1,0 +1,93 @@
+{
+  "components": {
+    "llm": {
+      "probes": [
+        {
+          "tag": "qwen3:14b",
+          "runs": [
+            {
+              "seed": 1,
+              "ok": true,
+              "seconds": 4.4
+            },
+            {
+              "seed": 2,
+              "ok": true,
+              "seconds": 1.9
+            },
+            {
+              "seed": 3,
+              "ok": true,
+              "seconds": 4.5
+            }
+          ],
+          "passed": true,
+          "vram_gib": 9.75,
+          "size_gib": 9.75
+        }
+      ],
+      "checked": "2026-10-10T16:21:39+00:00",
+      "status": "verified",
+      "id": "qwen3:14b",
+      "runtime": "ollama",
+      "host": "http://127.0.0.1:11435",
+      "num_ctx": 8192,
+      "peak_vram_gb": 9.75
+    },
+    "sdxl": {
+      "checked": "2026-10-10T16:16:41+00:00",
+      "base": "stabilityai/stable-diffusion-xl-base-1.0",
+      "vae": "madebyollin/sdxl-vae-fp16-fix",
+      "status": "verified",
+      "id": "sdxl_lightning",
+      "unet": "ByteDance/SDXL-Lightning/sdxl_lightning_4step_unet.safetensors",
+      "seconds": 150.2,
+      "peak_vram_gb": 7.17
+    },
+    "depth": {
+      "checked": "2026-10-10T16:19:12+00:00",
+      "status": "verified",
+      "id": "depth-anything/Depth-Anything-V2-Small-hf",
+      "seconds": 0.3,
+      "peak_vram_gb": 0.21
+    },
+    "rembg": {
+      "checked": "2026-10-10T16:19:16+00:00",
+      "attempts": [],
+      "status": "verified",
+      "id": "birefnet-general",
+      "seconds": 29.8,
+      "providers": [
+        "CPUExecutionProvider"
+      ]
+    },
+    "safety": {
+      "checked": "2026-10-10T16:19:46+00:00",
+      "status": "verified",
+      "id": "CompVis/stable-diffusion-safety-checker",
+      "blank_flagged": false,
+      "seconds": 0.2,
+      "peak_vram_gb": 0.58
+    },
+    "clip": {
+      "checked": "2026-10-10T16:21:39+00:00",
+      "status": "verified",
+      "id": "openai/clip-vit-base-patch32",
+      "probs": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "seconds": 0.7,
+      "peak_vram_gb": 0.3
+    },
+    "room": {
+      "checked": "2026-10-10T16:20:04+00:00",
+      "prompt": "a cosy living room with a sofa, a plant, bookshelves and a window, natural light, photograph",
+      "status": "verified",
+      "source": "sdxl_lightning"
+    }
+  },
+  "fallbacks": [],
+  "updated": "2026-10-10T16:21:58+00:00"
+}

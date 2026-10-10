@@ -1,0 +1,44 @@
+# Arc beat: the peak. Descriptions visibly fail when the deepest layer is chrysanthemum or deeper.
+mandatory:
+  - when: {layer_min: breakthrough}
+    lines:
+      - "And then I was through. I don't know how else to put it. Somewhere else, completely."
+      - "Then there was a sort of tearing-open, a veil lifting, and I was just... somewhere else."
+      - "And then I broke through into a place. It wasn't a vision, it was a place."
+  - when: {layer: waiting_room}
+    lines:
+      - "Then I was in a kind of enormous room, a space that went on in every direction, and I was waiting there."
+      - "Then I ended up in what I can only call a waiting room, huge, enclosing, endless."
+      - "Then it became an interior, endlessly deep, like standing inside an infinitely folded building."
+  - when: {layer: chrysanthemum}
+    lines:
+      - "Near the top of it everything got very dense and very fast."
+      - "At the strongest point it was just too much happening at once to hold."
+  - when: {layer: form_constants}
+    lines:
+      - "At the strongest point it was intense but I always knew where I was."
+      - "It never took me anywhere, but it was very beautiful for a while."
+  - lines:
+      - "That was about as far as it went."
+      - "It stayed gentle the whole time."
+failing:  # added after the mandatory peak line when layer ≥ chrysanthemum
+  - "I keep trying to describe this part and it just... no. It wasn't like anything."
+  - "Words fail here. Really. I've started this sentence five times."
+  - "It was like, okay, imagine, no. I can't. There's no comparison that works."
+  - "I don't have the words for it, and I'm not sure words are even the right tool."
+  - "It was more real than real, which is a phrase I hated until right then."
+optional:
+  - when: {layer_min: waiting_room}
+    lines:
+      - "Time didn't work there, or it worked sideways."
+      - "There was this overwhelming sense that the place had been here all along."
+      - "{world}"
+      - "Everything there was more detailed the closer I looked, with no bottom to it."
+  - when: {layer_min: chrysanthemum}
+    lines:
+      - "I lost track of the idea that I was sitting in a chair."
+      - "It was too fast and too intricate to keep in memory, like trying to remember a waterfall."
+fillers:
+  - "I'm genuinely unsure of the order of things here; it's all one bright knot."
+  - "Some of this I'm probably filling in, because the middle is a blur."
+  - "I know more happened than I can tell, and I know I'm getting some of it wrong."

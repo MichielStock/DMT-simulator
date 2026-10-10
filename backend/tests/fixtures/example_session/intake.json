@@ -1,0 +1,30 @@
+{
+ "version": 1,
+ "room": {
+  "source": "photo",
+  "image": "assets/room.jpg",
+  "depth": "assets/room_depth.png"
+ },
+ "answers": {
+  "clarity": 5,
+  "set": 0,
+  "absorption": [
+   5,
+   5,
+   5
+  ],
+  "surrender": 5,
+  "intention": "curiosity",
+  "expectations": []
+ },
+ "dose_step": "breakthrough",
+ "hold_fraction": 1.0,
+ "options": {
+  "difficult_passages": true,
+  "eyes": "auto",
+  "audio": true,
+  "microphone": false,
+  "live_diffusion": false
+ },
+ "seed": 20261010
+}

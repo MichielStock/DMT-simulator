@@ -1,0 +1,20 @@
+# Arc beat: setting (BUILD.md §13.4). Placeholders: {step}, {intention}, {room}.
+mandatory:
+  - lines:
+      - "This was a simulated session at the {step} step, so take all of this with that in mind."
+      - "Simulated session, {step} step, sitting {room}."
+      - "Quick context: this was the simulator, not the real thing, and I picked the {step} step."
+      - "I did a simulated session at the {step} step, {room}."
+      - "So, a simulated session, {step} step, nothing else going on that day."
+optional:
+  - lines:
+      - "I had about three minutes of questions first, and then a little settling screen while it got ready."
+      - "I went in mostly out of {intention}, without much of a plan."
+      - "I'd read a lot of reports beforehand and honestly expected it to be a bit silly."
+      - "It was quiet in the room and I had the lights low."
+      - "Before starting I sat for a minute and tried not to expect anything in particular."
+      - "The setup asked how I was feeling and I answered more honestly than I expected to."
+fillers:
+  - "I don't remember much about the minutes right before, only that I was a little nervous."
+  - "I think I spent longer than necessary getting comfortable in the chair."
+  - "There was some waiting at the start that has already blurred together."

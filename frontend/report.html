@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Hyperspace · Simulated trip report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    @font-face { font-family: 'VT323'; src: url('/fonts/VT323-Regular.ttf') format('truetype'); }
+    html, body { background: #0a0700; color: #ffb000; font-family: 'VT323', monospace; font-size: 28px; margin: 2em; }
+    a { color: #4fe3ff; }
+  </style>
+</head>
+<body>
+  <!-- The real report is served by the back end at /sessions/<id>/report.html; this page only redirects. -->
+  <div id="msg">OPENING REPORT…</div>
+  <script>
+    (function () {
+      var id = new URLSearchParams(location.search).get('id');
+      var msg = document.getElementById('msg');
+      if (!id || !/^[A-Za-z0-9_\-]+$/.test(id)) {
+        msg.innerHTML = 'NO SESSION GIVEN. <a href="/">[T] TITLE</a>';
+        return;
+      }
+      location.replace('/sessions/' + encodeURIComponent(id) + '/report.html');
+    })();
+  </script>
+</body>
+</html>

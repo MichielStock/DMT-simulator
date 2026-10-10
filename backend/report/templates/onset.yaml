@@ -1,0 +1,38 @@
+# Arc beat: onset (first minute). Mention groups are tagged by category.
+mandatory:
+  - when: {layer_max: onset}
+    lines:
+      - "The edges of things shimmered a little and the room felt slightly too sharp."
+      - "There was a faint shimmer at the corners of everything, and that was about it."
+      - "The room got a little brighter and softer at the same time, like a filter had gone on."
+  - lines:
+      - "Within maybe twenty seconds the room started to breathe."
+      - "The walls started breathing almost straight away, slowly at first."
+      - "Everything in the room began to drift and swell, gently, like it was alive."
+      - "The room started moving in a slow, breathing way that I could not stop seeing."
+optional:
+  - lines:
+      - "The bookshelf looked like it was very slightly melting and then un-melting."
+      - "It was strangely calm, more interesting than scary at that point."
+      - "I remember thinking, okay, here it comes."
+      - "Things started to look over-detailed, like the resolution had been turned up."
+      - "Surfaces looked wet and alive in a way I can't really explain."
+fillers:
+  - "I think a fair amount happened here that I simply didn't keep."
+  - "There's a short stretch around here that I can't really account for."
+mentions:
+  vibration:
+    - "Before anything visual there was this vibration running through my body, like standing next to a huge speaker."
+    - "The first thing was a buzzing, everywhere at once, like my whole body had been plugged in."
+    - "My body started vibrating, or that's how it felt, a fine fast buzz under everything."
+    - "A strong buzzing came up through my chest and arms before I saw anything at all."
+  body:
+    - "My hands went heavy and tingly and I stopped wanting to move them."
+    - "There was a heaviness in my chest, not unpleasant, just very present."
+    - "I got goosebumps all over and a kind of warm tingling in my face."
+    - "My limbs felt weightless, like they had been unhooked from the rest of me."
+  sound:
+    - "There was a high-pitched ringing that slowly got louder, like a carrier tone."
+    - "A ringing started in both ears, steady and electric."
+    - "I could hear a sort of humming whine rising under everything."
+    - "Some kind of crackling static came in, very faint at first."

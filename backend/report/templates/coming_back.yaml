@@ -1,0 +1,25 @@
+# Arc beat: coming back.
+mandatory:
+  - when: {ended_early: true}
+    lines:
+      - "At some point I pressed Escape and it faded back to my room over a few seconds."
+      - "I ended it early with Escape; it eased me back into the room gently."
+  - when: {layer_min: waiting_room}
+    lines:
+      - "Coming back was slow, the layers peeling off in reverse until I was in my room again."
+      - "Then it all started reversing, back through everything, until the room reassembled itself."
+      - "Coming down, it passed back through all the stages, slower, until I was just sitting in the chair."
+  - lines:
+      - "Then it faded out and the room came back."
+      - "After a while it just tapered off and I was back."
+      - "It slowed down gradually and the room settled back into place."
+optional:
+  - lines:
+      - "Even back in the room, things kept drifting a little for a few minutes."
+      - "The room looked very ordinary afterwards, almost too ordinary."
+      - "I sat there for a bit just breathing."
+      - "The first thing I did was laugh, I'm not sure why."
+      - "The grounding screen said I was back, and I needed to hear it."
+fillers:
+  - "I'm hazy on how long the come-down took."
+  - "I lost the thread somewhere in the come-down and only picked it up again in the room."

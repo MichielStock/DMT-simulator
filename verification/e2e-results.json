@@ -1,0 +1,427 @@
+{
+  "config": {
+    "argv": [
+      "/home/mstock/.local/opt/node/bin/node",
+      "/home/mstock/Code/hyperspace/frontend/node_modules/.bin/playwright",
+      "test",
+      "--list"
+    ],
+    "configFile": "/home/mstock/Code/hyperspace/frontend/playwright.config.ts",
+    "rootDir": "/home/mstock/Code/hyperspace/tests/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {},
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/mstock/Code/hyperspace/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "",
+        "name": "",
+        "testDir": "/home/mstock/Code/hyperspace/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 900000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/home/mstock/Code/hyperspace/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "name": "",
+        "testDir": "/home/mstock/Code/hyperspace/tests/e2e",
+        "snapshotDir": "/home/mstock/Code/hyperspace/tests/e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 900000,
+        "use": {
+          "baseURL": "http://127.0.0.1:8765",
+          "headless": true,
+          "viewport": {
+            "width": 1280,
+            "height": 720
+          },
+          "launchOptions": {
+            "args": [
+              "--use-gl=angle",
+              "--use-angle=default",
+              "--enable-gpu",
+              "--ignore-gpu-blocklist",
+              "--enable-unsafe-webgpu",
+              "--autoplay-policy=no-user-gesture-required"
+            ]
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "../verification/e2e-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.0",
+    "workers": 1,
+    "webServer": {
+      "command": "cd .. && ./run.sh --serve-only",
+      "url": "http://127.0.0.1:8765/api/status",
+      "reuseExistingServer": true,
+      "timeout": 600000,
+      "stdout": "pipe",
+      "stderr": "pipe"
+    }
+  },
+  "suites": [
+    {
+      "title": "screens.spec.ts",
+      "file": "screens.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "screens at 1920x1080",
+          "file": "screens.spec.ts",
+          "line": 36,
+          "column": 8,
+          "specs": [
+            {
+              "title": "title",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 900000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2676ef668c5398eed988-31ce9529620db6dcb1ba",
+              "file": "screens.spec.ts",
+              "line": 39,
+              "column": 9
+            },
+            {
+              "title": "safety",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 900000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2676ef668c5398eed988-874c7d601e117d1ba90b",
+              "file": "screens.spec.ts",
+              "line": 47,
+              "column": 9
+            },
+            {
+              "title": "intake",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 900000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2676ef668c5398eed988-4148e4dbace9a20365fe",
+              "file": "screens.spec.ts",
+              "line": 54,
+              "column": 9
+            },
+            {
+              "title": "end screen",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 900000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2676ef668c5398eed988-d0840c7bccdd82faeab1",
+              "file": "screens.spec.ts",
+              "line": 64,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "screens at 3840x2160",
+          "file": "screens.spec.ts",
+          "line": 36,
+          "column": 8,
+          "specs": [
+            {
+              "title": "title",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 900000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2676ef668c5398eed988-18e5970af374259d4c1b",
+              "file": "screens.spec.ts",
+              "line": 39,
+              "column": 9
+            },
+            {
+              "title": "safety",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 900000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2676ef668c5398eed988-8c65bfdff1d384bf713e",
+              "file": "screens.spec.ts",
+              "line": 47,
+              "column": 9
+            },
+            {
+              "title": "intake",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 900000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2676ef668c5398eed988-bdc023b6878c20d765eb",
+              "file": "screens.spec.ts",
+              "line": 54,
+              "column": 9
+            },
+            {
+              "title": "end screen",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 900000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2676ef668c5398eed988-238cbf9ca77ce5e76923",
+              "file": "screens.spec.ts",
+              "line": 64,
+              "column": 9
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "session.spec.ts",
+      "file": "session.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "full session at threshold (timewarp 10)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 900000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "/home/mstock/Code/hyperspace/tests/e2e/session.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "6fa1842ca325e3ffbb00-2fa0d60a877062fe583e",
+          "file": "session.spec.ts",
+          "line": 14,
+          "column": 7
+        },
+        {
+          "title": "full session at light (timewarp 10)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 900000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "/home/mstock/Code/hyperspace/tests/e2e/session.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "6fa1842ca325e3ffbb00-14f95b8c1f6d01889605",
+          "file": "session.spec.ts",
+          "line": 14,
+          "column": 7
+        },
+        {
+          "title": "full session at strong (timewarp 10)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 900000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "/home/mstock/Code/hyperspace/tests/e2e/session.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "6fa1842ca325e3ffbb00-4905d39f185bdfc32bbd",
+          "file": "session.spec.ts",
+          "line": 14,
+          "column": 7
+        },
+        {
+          "title": "full session at breakthrough (timewarp 10)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 900000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "/home/mstock/Code/hyperspace/tests/e2e/session.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "6fa1842ca325e3ffbb00-7b9b547d45f0c0e99c1d",
+          "file": "session.spec.ts",
+          "line": 14,
+          "column": 7
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-10T16:28:42.576Z",
+    "duration": 94.94900000000001,
+    "expected": 0,
+    "skipped": 12,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

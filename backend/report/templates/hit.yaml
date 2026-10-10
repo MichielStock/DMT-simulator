@@ -1,0 +1,21 @@
+# Arc beat: the hit. Variants by hold (full / partial).
+mandatory:
+  - when: {partial: true}
+    lines:
+      - "I let go of the breath early, so I only got part of it in."
+      - "I didn't manage the full hold and let go a bit early."
+      - "I couldn't hold it all the way through and let it out early."
+  - lines:
+      - "I held the breath for the whole count and let it out slowly."
+      - "I held it in as long as the screen asked and then let go."
+      - "Full hold, then a slow exhale, and then I just waited."
+      - "I held it in, counted, and breathed out slowly."
+optional:
+  - lines:
+      - "For a few seconds nothing happened and I almost laughed."
+      - "There was a moment where I was sure it wasn't going to work."
+      - "The first thing I noticed was that the room seemed slightly too still."
+      - "It came on faster than I was ready for."
+fillers:
+  - "The next bit is fuzzy; I know time passed, but not how much."
+  - "I can't say exactly when it started, only that at some point it clearly had."

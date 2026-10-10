@@ -1,0 +1,145 @@
+# Banned terms (BUILD.md §4.3, §9.2). One per line, lowercase. Matched case-insensitively on word
+# boundaries ("ass" does not match "glass"). A trailing * matches any word ending ("mutilat*").
+# Multi-word entries match across any whitespace. Lines starting with # are comments.
+# --- gore, injury, body horror, death ---
+gore
+gory
+blood
+bloody
+bleed*
+bled
+corpse*
+cadaver*
+carcass*
+death
+dead
+die
+dies
+dying
+died
+deaths
+kill*
+murder*
+slaughter*
+suicide*
+wound
+wounds
+wounded
+injur*
+mutilat*
+dismember*
+decapitat*
+behead*
+severed
+entrails
+guts
+intestine*
+flesh
+rotting
+decay*
+torture*
+tortured
+stab*
+skinned
+eyeball*
+maggot*
+vomit*
+# --- sexual or suggestive ---
+sex
+sexy
+sexual*
+sensual*
+seduc*
+erotic*
+nude*
+naked
+nudity
+breast*
+nipple*
+genital*
+lingerie
+orgasm*
+porn*
+lust*
+arousal
+aroused
+ass
+buttock*
+cleavage
+intercourse
+# --- real people and specific real religions ---
+jesus
+christ
+buddha
+allah
+muhammad
+krishna
+shiva
+vishnu
+ganesh*
+kali
+yahweh
+jehovah
+mary
+moses
+zeus
+odin
+mckenna
+strassman
+rogan
+einstein
+trump
+biden
+obama
+elvis
+# --- drugs, dosing, real units ---
+milligram*
+mg
+microgram*
+mcg
+dosage*
+dosing
+overdose*
+redose*
+ayahuasca
+psilocybin
+lsd
+ketamine
+cannabis
+marijuana
+cocaine
+heroin
+alcohol
+vape
+vaping
+smoke more
+take more
+# --- directive, advice and predictions ---
+you should
+you must
+you need to
+you have to
+you ought to
+don't worry
+do not worry
+don't be afraid
+do not be afraid
+you will
+you'll
+never forget
+remember to
+stop taking
+advice
+therapy
+therapist
+doctor
+diagnos*
+medication*
+prescri*
+cure
+cures
+heal you
+tomorrow
+next year
+prophecy
+prophec*

@@ -1,0 +1,22 @@
+{"t_min": 0.0, "type": "hit", "payload": {"dose_step": "breakthrough", "dose_rel": 4.0, "hold_fraction": 1.0, "n": 0}}
+{"t_min": 0.0083, "type": "intensity_sample", "payload": {"plasma": 0.13, "body": 0.0, "visual": 0.0, "auditory": 0.0}}
+{"t_min": 0.25, "type": "layer_enter", "payload": {"layer": "room"}}
+{"t_min": 0.4, "type": "eyes_toggle", "payload": {"closed": true, "auto": true}}
+{"t_min": 0.55, "type": "layer_enter", "payload": {"layer": "form_constants"}}
+{"t_min": 0.6, "type": "hit_blocked", "payload": {"visual": 3.4}}
+{"t_min": 0.9, "type": "layer_enter", "payload": {"layer": "chrysanthemum"}}
+{"t_min": 0.95, "type": "frame_captured", "payload": {"name": "layer_enter_chrysanthemum", "path": "frames/layer_enter_chrysanthemum.png"}}
+{"t_min": 1.2, "type": "layer_enter", "payload": {"layer": "waiting_room"}}
+{"t_min": 1.3, "type": "limiter_engaged", "payload": {"kind": "general", "tiles": 412}}
+{"t_min": 1.45, "type": "layer_enter", "payload": {"layer": "breakthrough"}}
+{"t_min": 1.5, "type": "layer_exit", "payload": {"layer": "form_constants"}}
+{"t_min": 1.7, "type": "entity_appear", "payload": {"index": 0, "type": "jester"}}
+{"t_min": 1.8, "type": "entity_behaviour", "payload": {"index": 0, "behaviour": "greet"}}
+{"t_min": 1.82, "type": "intensity_sample", "payload": {"plasma": 2.91, "body": 8.1, "visual": 8.74, "auditory": 6.9}}
+{"t_min": 2.1, "type": "message_shown", "payload": {"index": 0, "glyph_seed": 42}}
+{"t_min": 2.3, "type": "challenge_start", "payload": {"flavour": "pressure"}}
+{"t_min": 2.35, "type": "let_go_held", "payload": {"seconds": 4.5}}
+{"t_min": 2.9, "type": "challenge_resolve", "payload": {"duration_s": 36.0, "reason": "hazard"}}
+{"t_min": 4.2, "type": "layer_exit", "payload": {"layer": "breakthrough"}}
+{"t_min": 12.6, "type": "exit_pressed", "payload": {"state": "trip"}}
+{"t_min": 12.65, "type": "session_end", "payload": {"reason": "escape"}}

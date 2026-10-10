@@ -1,0 +1,15 @@
+# Mention probabilities for the template writer (BUILD.md §14: "mentions are not occurrences").
+# Tuned so that, under the §14 dose mix, report mention rates approach Lawrence et al. 2022:
+# entity 45.5%, geometry 32.6%, colours 25.2%, any bodily 37.5%, vibration 27.2%, ringing-type sound 15.4%.
+# Tuning log: see NOTES.md (validation decisions).
+geometry_if_form_constants: 0.43   # P(deepest ≥ form constants | mix) ≈ 0.86 → 0.326 / 0.86
+geometry_if_onset: 0.0
+colour_if_onset: 0.26              # any visual effect (≈ 95% of mix) → 0.252 / 0.955
+vibration: 0.29                    # 0.272 / 0.955
+body_other: 0.12                   # so that any-bodily ≈ 0.375 with vibration
+sound: 0.165                       # 0.154 / 0.955
+entity_if_logged: 0.97             # beings appeared in the event log
+presence_if_waiting_room: 0.8      # no beings logged but deepest ≥ waiting room (felt presence)
+presence_if_chrysanthemum: 0.30
+# Tuning 1 (n=1000, seed 3, templates): entity 0.81, geometry 0.87, body 1.10 of target →
+#   geometry 0.38→0.43, body_other 0.145→0.12, presence 0.6→0.8 (waiting room) and 0.15→0.30 (chrysanthemum).

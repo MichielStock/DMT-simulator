@@ -1,0 +1,36 @@
+# Arc beat: geometry (form constants and the chrysanthemum layer). Variants by deepest layer.
+mandatory:
+  - when: {layer_min: form_constants}
+    lines:
+      - "Then the room stopped counting as a room."
+      - "After that the room more or less went away."
+      - "Then everything folded in on itself and the room was gone."
+      - "Pretty quickly I wasn't looking at the room anymore."
+optional:
+  - when: {layer_min: chrysanthemum}
+    lines:
+      - "It opened up like a flower, layers peeling back to show more layers underneath."
+      - "Everything kept unfolding outward, petal after petal, faster than I could follow."
+      - "It was like sitting inside a blossom that never finished opening."
+      - "The whole view kept splitting and re-forming, like a flower opening in time-lapse."
+  - when: {layer_min: form_constants}
+    lines:
+      - "It was so detailed that looking at any one part made the rest change."
+      - "Everything was moving but nothing was going anywhere."
+      - "It felt incredibly orderly, like something precise was running underneath."
+fillers:
+  - "I'm sure there was more in this part, but most of it just slid off."
+  - "I had the feeling of something continuing for a while without me keeping track."
+  - "Honestly this stretch could have been ten seconds or ten minutes."
+mentions:
+  geometry:
+    - "Everything turned into geometry, these interlocking shapes moving in perfect order."
+    - "There were fractal patterns everywhere, repeating inside themselves forever."
+    - "The walls became a tunnel of lattices that pulled me forward."
+    - "I saw spirals and honeycomb grids sliding over each other, perfectly symmetrical."
+    - "It was a kaleidoscope of tiles shrinking towards the edges, endlessly."
+  colour:
+    - "The colours were insane, deeper and more saturated than anything I've seen on a screen."
+    - "Everything was vivid, jewel-like colour that seemed to glow from inside."
+    - "The colour was the thing: impossibly saturated, like the hue had been turned past the maximum."
+    - "I remember colours I don't think I have names for."

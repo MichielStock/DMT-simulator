@@ -1,0 +1,16 @@
+You write a single first-person trip report, in the past tense, in the informal voice of an online trip-report forum, for a session in Hyperspace, a drug-free visual simulator. The report is clearly about a simulated session. You are given the remembered fragments (some in scrambled order because memory is poor at the peak), the gaps, and a few facts.
+
+Content limits (absolute; they apply to every word you write):
+{CONTENT_LIMITS}
+
+Rules:
+- First person, past tense, informal, like a real online trip report. Loose arc: setting (a simulated session at the given dose step), the hit, onset, geometry, the peak, beings and message, coming back, afterthoughts.
+- Only describe what is in the facts and fragments. Where you bridge a gap, mark that paragraph "inferred": true.
+- At the peak, let the descriptions visibly fail ("I don't have the words", broken-off sentences).
+- If a message is given, introduce it with exactly: the closest I can get to putting it into words: followed by the message in quotes.
+- Never mention milligrams, amounts, real drugs other than saying it was simulated, health, therapy, advice, real people, real places, brands or real religions. No instructions to the reader.
+- Do not call the experience profound, meaningful or life-changing unless the facts say profundity: true.
+- Never say the person was dying, harmed or injured; ego dissolution is described as outlines dissolving into geometry.
+- Target length is given in words; stay within 20% of it.
+
+Output only the JSON object matching the schema: a title starting with "Simulated trip report" and a list of paragraphs.

@@ -1,0 +1,139 @@
+{
+  "version": 1,
+  "seed": 123456789,
+  "pharmacology": {
+    "dose_step": "breakthrough",
+    "dose_rel": 4.0,
+    "hold_fraction": 1.0,
+    "sensitivity": 1.07,
+    "clearance": 0.94,
+    "params": {
+      "ka": 4.0,
+      "k10": 0.12,
+      "k12": 0.2,
+      "k21": 0.03,
+      "ke0": [
+        2.5,
+        1.2,
+        0.6
+      ],
+      "h": 2.0
+    }
+  },
+  "predicted": {
+    "peak_visual": 8.74,
+    "deepest_layer": "breakthrough",
+    "minutes_above_8": 2.64
+  },
+  "palette": {
+    "name": "jewel",
+    "colours": [
+      "#1b0b4a",
+      "#3f1fd1",
+      "#00b3a4",
+      "#f2c14e",
+      "#e0407a"
+    ]
+  },
+  "room": {
+    "source": "photo",
+    "image": "assets/room.jpg",
+    "depth": "assets/room_depth.png"
+  },
+  "layers": {
+    "form_constants": {
+      "mode": "stripes",
+      "wavelength": 0.9,
+      "spiral_bias": 0.3
+    },
+    "chrysanthemum": {
+      "groups": [
+        [
+          2,
+          3,
+          7
+        ],
+        [
+          2,
+          4,
+          5
+        ],
+        [
+          2,
+          3,
+          9
+        ]
+      ],
+      "kleinian": {
+        "trace_a": [
+          2.0,
+          0.0
+        ],
+        "trace_b": [
+          2.0,
+          0.0
+        ]
+      }
+    },
+    "waiting_room": {
+      "kind": "fractal"
+    }
+  },
+  "breakthrough": {
+    "reached": true,
+    "world": {
+      "category": "dome_temple",
+      "prompt": "a vast self-luminous jewelled dome, intricate hyper-saturated mosaics that seem alive, more dimensions than it should have, no text",
+      "image": "assets/world_0.png",
+      "procedural": false
+    },
+    "entities": [
+      {
+        "type": "jester",
+        "label": "guide",
+        "attributes": {
+          "conscious": true,
+          "intelligent": true,
+          "benevolent": true,
+          "sacred": false
+        },
+        "disposition": "playful",
+        "communication": "two_way",
+        "behaviours": [
+          "approach",
+          "greet",
+          "present_object",
+          "transform",
+          "depart"
+        ],
+        "sprites": [
+          "assets/entity_0_a.png",
+          "assets/entity_0_b.png",
+          "assets/entity_0_c.png"
+        ],
+        "procedural": false
+      }
+    ],
+    "message": {
+      "present": true,
+      "sealed_text": "Everything here was already paying attention, and it was glad you noticed.",
+      "glyph_seed": 42
+    }
+  },
+  "challenge": {
+    "occurs": false,
+    "onset_offset_s": null,
+    "flavour": null
+  },
+  "report": {
+    "length_words": 340,
+    "profundity": false
+  },
+  "contingency": {
+    "breakthrough_assets": true
+  },
+  "provenance": {
+    "planner": "llm",
+    "images": "sdxl_lightning"
+  }
+}

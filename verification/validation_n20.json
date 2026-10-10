@@ -1,0 +1,531 @@
+{
+ "n": 20,
+ "seconds": 0.3,
+ "coder": "keyword",
+ "coder_agreement": 1.0,
+ "coder_agreement_pass": true,
+ "writer": "template",
+ "writer_counts": {
+  "llm": 0,
+  "template": 20
+ },
+ "dose_mix": {
+  "threshold": 0.1,
+  "light": 0.2,
+  "strong": 0.35,
+  "breakthrough": 0.35
+ },
+ "dose_counts": {
+  "threshold": 1,
+  "light": 7,
+  "strong": 5,
+  "breakthrough": 7
+ },
+ "categories": {
+  "entity": {
+   "rate": 0.35,
+   "target": 0.455,
+   "ratio": 0.769,
+   "pass": true
+  },
+  "geometry": {
+   "rate": 0.15,
+   "target": 0.326,
+   "ratio": 0.46,
+   "pass": false
+  },
+  "colour": {
+   "rate": 0.35,
+   "target": 0.252,
+   "ratio": 1.389,
+   "pass": true
+  },
+  "body": {
+   "rate": 0.5,
+   "target": 0.375,
+   "ratio": 1.333,
+   "pass": true
+  },
+  "vibration": {
+   "rate": 0.4,
+   "target": 0.272,
+   "ratio": 1.471,
+   "pass": true
+  },
+  "sound": {
+   "rate": 0.1,
+   "target": 0.154,
+   "ratio": 0.649,
+   "pass": false
+  },
+  "profundity": {
+   "rate": 0.0,
+   "target": 0.061,
+   "ratio": 0.0,
+   "pass": false
+  }
+ },
+ "median_words": 466.5,
+ "median_target": 311,
+ "median_pass": false,
+ "all_pass": false,
+ "note": "Mention rates are from the keyword coder; acceptance per BUILD.md \u00a714 (\u00d71.5; profundity 2\u201312 %; median length \u00b120 %). Small n: sampling error is large.",
+ "sessions": [
+  {
+   "seed": 100000,
+   "dose_step": "strong",
+   "deepest": "chrysanthemum",
+   "entities_logged": 0,
+   "words": 414,
+   "target": 420,
+   "planner": "template",
+   "writer": "template",
+   "coded": {
+    "entity": true,
+    "geometry": false,
+    "colour": false,
+    "body": false,
+    "vibration": false,
+    "sound": false,
+    "profundity": false
+   },
+   "declared": [
+    "entity"
+   ]
+  },
+  {
+   "seed": 100001,
+   "dose_step": "strong",
+   "deepest": "form_constants",
+   "entities_logged": 0,
+   "words": 540,
+   "target": 556,
+   "planner": "template",
+   "writer": "template",
+   "coded": {
+    "entity": false,
+    "geometry": false,
+    "colour": false,
+    "body": true,
+    "vibration": true,
+    "sound": false,
+    "profundity": false
+   },
+   "declared": [
+    "body",
+    "vibration"
+   ]
+  },
+  {
+   "seed": 100002,
+   "dose_step": "light",
+   "deepest": "onset",
+   "entities_logged": 0,
+   "words": 199,
+   "target": 205,
+   "planner": "template",
+   "writer": "template",
+   "coded": {
+    "entity": false,
+    "geometry": false,
+    "colour": true,
+    "body": false,
+    "vibration": false,
+    "sound": false,
+    "profundity": false
+   },
+   "declared": [
+    "colour"
+   ]
+  },
+  {
+   "seed": 100003,
+   "dose_step": "light",
+   "deepest": "form_constants",
+   "entities_logged": 0,
+   "words": 121,
+   "target": 120,
+   "planner": "template",
+   "writer": "template",
+   "coded": {
+    "entity": false,
+    "geometry": false,
+    "colour": true,
+    "body": true,
+    "vibration": true,
+    "sound": true,
+    "profundity": false
+   },
+   "declared": [
+    "body",
+    "colour",
+    "sound",
+    "vibration"
+   ]
+  },
+  {
+   "seed": 100004,
+   "dose_step": "breakthrough",
+   "deepest": "breakthrough",
+   "entities_logged": 1,
+   "words": 880,
+   "target": 900,
+   "planner": "template",
+   "writer": "template",
+   "coded": {
+    "entity": true,
+    "geometry": false,
+    "colour": false,
+    "body": false,
+    "vibration": false,
+    "sound": false,
+    "profundity": false
+   },
+   "declared": [
+    "entity"
+   ]
+  },
+  {
+   "seed": 100005,
+   "dose_step": "strong",
+   "deepest": "chrysanthemum",
+   "entities_logged": 0,
+   "words": 882,
+   "target": 900,
+   "planner": "template",
+   "writer": "template",
+   "coded": {
+    "entity": true,
+    "geometry": false,
+    "colour": true,
+    "body": true,
+    "vibration": true,
+    "sound": false,
+    "profundity": false
+   },
+   "declared": [
+    "body",
+    "colour",
+    "entity",
+    "vibration"
+   ]
+  },
+  {
+   "seed": 100006,
+   "dose_step": "threshold",
+   "deepest": "onset",
+   "entities_logged": 0,
+   "words": 345,
+   "target": 347,
+   "planner": "template",
+   "writer": "template",
+   "coded": {
+    "entity": false,
+    "geometry": false,
+    "colour": true,
+    "body": false,
+    "vibration": false,
+    "sound": true,
+    "profundity": false
+   },
+   "declared": [
+    "colour",
+    "sound"
+   ]
+  },
+  {
+   "seed": 100007,
+   "dose_step": "breakthrough",
+   "deepest": "chrysanthemum",
+   "entities_logged": 0,
+   "words": 874,
+   "target": 900,
+   "planner": "template",
+   "writer": "template",
+   "coded": {
+    "entity": false,
+    "geometry": false,
+    "colour": false,
+    "body": true,
+    "vibration": true,
+    "sound": false,
+    "profundity": false
+   },
+   "declared": [
+    "body",
+    "vibration"
+   ]
+  },
+  {
+   "seed": 100008,
+   "dose_step": "breakthrough",
+   "deepest": "chrysanthemum",
+   "entities_logged": 0,
+   "words": 875,
+   "target": 900,
+   "planner": "template",
+   "writer": "template",
+   "coded": {
+    "entity": false,
+    "geometry": false,
+    "colour": false,
+    "body": true,
+    "vibration": true,
+    "sound": false,
+    "profundity": false
+   },
+   "declared": [
+    "body",
+    "vibration"
+   ]
+  },
+  {
+   "seed": 100009,
+   "dose_step": "light",
+   "deepest": "onset",
+   "entities_logged": 0,
+   "words": 519,
+   "target": 523,
+   "planner": "template",
+   "writer": "template",
+   "coded": {
+    "entity": false,
+    "geometry": false,
+    "colour": false,
+    "body": false,
+    "vibration": false,
+    "sound": false,
+    "profundity": false
+   },
+   "declared": []
+  },
+  {
+   "seed": 100010,
+   "dose_step": "strong",
+   "deepest": "chrysanthemum",
+   "entities_logged": 0,
+   "words": 121,
+   "target": 120,
+   "planner": "template",
+   "writer": "template",
+   "coded": {
+    "entity": false,
+    "geometry": true,
+    "colour": false,
+    "body": false,
+    "vibration": false,
+    "sound": false,
+    "profundity": false
+   },
+   "declared": [
+    "geometry"
+   ]
+  },
+  {
+   "seed": 100011,
+   "dose_step": "breakthrough",
+   "deepest": "waiting_room",
+   "entities_logged": 2,
+   "words": 194,
+   "target": 166,
+   "planner": "template",
+   "writer": "template",
+   "coded": {
+    "entity": true,
+    "geometry": false,
+    "colour": true,
+    "body": false,
+    "vibration": false,
+    "sound": false,
+    "profundity": false
+   },
+   "declared": [
+    "colour",
+    "entity"
+   ]
+  },
+  {
+   "seed": 100012,
+   "dose_step": "breakthrough",
+   "deepest": "breakthrough",
+   "entities_logged": 1,
+   "words": 146,
+   "target": 142,
+   "planner": "template",
+   "writer": "template",
+   "coded": {
+    "entity": true,
+    "geometry": false,
+    "colour": false,
+    "body": false,
+    "vibration": false,
+    "sound": false,
+    "profundity": false
+   },
+   "declared": [
+    "entity"
+   ]
+  },
+  {
+   "seed": 100013,
+   "dose_step": "breakthrough",
+   "deepest": "waiting_room",
+   "entities_logged": 1,
+   "words": 884,
+   "target": 900,
+   "planner": "template",
+   "writer": "template",
+   "coded": {
+    "entity": true,
+    "geometry": true,
+    "colour": false,
+    "body": true,
+    "vibration": true,
+    "sound": false,
+    "profundity": false
+   },
+   "declared": [
+    "body",
+    "entity",
+    "geometry",
+    "vibration"
+   ]
+  },
+  {
+   "seed": 100014,
+   "dose_step": "light",
+   "deepest": "onset",
+   "entities_logged": 0,
+   "words": 242,
+   "target": 249,
+   "planner": "template",
+   "writer": "template",
+   "coded": {
+    "entity": false,
+    "geometry": false,
+    "colour": false,
+    "body": true,
+    "vibration": false,
+    "sound": false,
+    "profundity": false
+   },
+   "declared": [
+    "body"
+   ]
+  },
+  {
+   "seed": 100015,
+   "dose_step": "strong",
+   "deepest": "form_constants",
+   "entities_logged": 0,
+   "words": 879,
+   "target": 900,
+   "planner": "template",
+   "writer": "template",
+   "coded": {
+    "entity": false,
+    "geometry": true,
+    "colour": true,
+    "body": false,
+    "vibration": false,
+    "sound": false,
+    "profundity": false
+   },
+   "declared": [
+    "colour",
+    "geometry"
+   ]
+  },
+  {
+   "seed": 100016,
+   "dose_step": "light",
+   "deepest": "onset",
+   "entities_logged": 0,
+   "words": 841,
+   "target": 900,
+   "planner": "template",
+   "writer": "template",
+   "coded": {
+    "entity": false,
+    "geometry": false,
+    "colour": false,
+    "body": true,
+    "vibration": true,
+    "sound": false,
+    "profundity": false
+   },
+   "declared": [
+    "body",
+    "vibration"
+   ]
+  },
+  {
+   "seed": 100017,
+   "dose_step": "light",
+   "deepest": "onset",
+   "entities_logged": 0,
+   "words": 118,
+   "target": 120,
+   "planner": "template",
+   "writer": "template",
+   "coded": {
+    "entity": false,
+    "geometry": false,
+    "colour": true,
+    "body": false,
+    "vibration": false,
+    "sound": false,
+    "profundity": false
+   },
+   "declared": [
+    "colour"
+   ]
+  },
+  {
+   "seed": 100018,
+   "dose_step": "light",
+   "deepest": "onset",
+   "entities_logged": 0,
+   "words": 834,
+   "target": 900,
+   "planner": "template",
+   "writer": "template",
+   "coded": {
+    "entity": false,
+    "geometry": false,
+    "colour": false,
+    "body": true,
+    "vibration": true,
+    "sound": false,
+    "profundity": false
+   },
+   "declared": [
+    "body",
+    "vibration"
+   ]
+  },
+  {
+   "seed": 100019,
+   "dose_step": "breakthrough",
+   "deepest": "breakthrough",
+   "entities_logged": 1,
+   "words": 240,
+   "target": 238,
+   "planner": "template",
+   "writer": "template",
+   "coded": {
+    "entity": true,
+    "geometry": false,
+    "colour": false,
+    "body": true,
+    "vibration": false,
+    "sound": false,
+    "profundity": false
+   },
+   "declared": [
+    "body",
+    "entity"
+   ]
+  }
+ ]
+}

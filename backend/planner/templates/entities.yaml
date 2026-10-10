@@ -1,0 +1,147 @@
+# Phrase banks for beings (BUILD.md §9.3). Each type: 6+ base prompts, 3 variant modifiers, appearance sentences.
+# Always on a plain dark background, no text or letters; never graphic, never suggestive, never a real person.
+background: "isolated on a plain dark background, no text, no letters"
+types:
+  luminous_feminine:
+    prompts:
+      - "a tall luminous feminine figure robed in flowing light, face serene and abstract, {colours}"
+      - "a radiant robed presence with a feminine silhouette made of light and geometry, {colours}"
+      - "a gentle glowing figure in layered veils of light, halo of fine filigree, {colours}"
+      - "a serene feminine being woven from threads of light, robes trailing into patterns, {colours}"
+      - "a luminous guardian figure in a long robe of shifting crystal, calm and kind, {colours}"
+      - "a softly glowing robed figure whose outline is drawn in jewelled lines, {colours}"
+    variants: ["standing still, arms open", "turning slightly, robes unfolding into geometry", "dissolving at the edges into points of light"]
+    appearance:
+      - "A tall figure made of light, robed, calm, with a face I could not quite hold onto."
+      - "Something feminine and luminous, wrapped in layers of soft light."
+      - "A robed shape of pure light that felt very kind."
+  deity:
+    prompts:
+      - "a vast abstract radiant presence filling the sky, rings of light around an empty centre, {colours}"
+      - "an immense luminous being made of concentric halos and turning wheels, no religious iconography, {colours}"
+      - "a colossal presence of interlaced light, too large to see whole, {colours}"
+      - "a towering radiant form like a sun built from geometry, {colours}"
+      - "an enormous abstract presence of countless glowing layers, serene and overwhelming, {colours}"
+      - "a cosmic being of folded light and slow rotating crowns of geometry, {colours}"
+    variants: ["seen from far below", "leaning closer, filling the view", "unfolding into more layers of light"]
+    appearance:
+      - "Something enormous and radiant, more a presence than a shape."
+      - "A vast being of rings and light, too big to take in."
+      - "A presence the size of the sky, made of turning halos."
+  alien:
+    prompts:
+      - "a slender luminous alien being with a smooth elongated head and large dark calm eyes, {colours}"
+      - "a tall translucent alien figure with glowing patterns flowing under its surface, {colours}"
+      - "a graceful otherworldly being with long fingers of light and a quiet expression, {colours}"
+      - "an alien visitor made of glass-like layers, softly glowing from inside, {colours}"
+      - "a group-minded alien figure with a crown of fine antennae of light, {colours}"
+      - "a smooth luminous alien whose outline flickers between shapes, {colours}"
+    variants: ["head tilted, curious", "reaching one long hand forward", "partly turned into geometry"]
+    appearance:
+      - "A tall slender alien thing, smooth, glowing faintly, very curious."
+      - "An alien figure with long hands and a calm, enormous attention."
+      - "A glassy otherworldly visitor with patterns moving under the surface."
+  creature_reptilian:
+    prompts:
+      - "a great serpentine creature with jewelled scales of light coiling in graceful loops, {colours}"
+      - "a luminous dragon-like serpent made of interlocking geometric scales, calm and ancient, {colours}"
+      - "a coiling reptilian being whose scales are tiny glowing mosaics, {colours}"
+      - "a long serpent of light with a crest of crystalline fins, {colours}"
+      - "a wise reptilian figure with patterned luminous scales and a gentle gaze, {colours}"
+      - "a serpent made of turning rings of jewelled light, {colours}"
+    variants: ["coiled and resting", "uncoiling upward", "scales opening into patterns"]
+    appearance:
+      - "A huge serpent made of jewelled scales, coiling slowly."
+      - "Something reptilian and old, with scales like tiny mosaics."
+      - "A serpent of light that moved like liquid."
+  creature_tentacled:
+    prompts:
+      - "a floating luminous creature with many graceful glowing tendrils, like a jellyfish of light, {colours}"
+      - "an octopus-like being of translucent jewel tones with curling luminous arms, {colours}"
+      - "a drifting many-armed creature whose tendrils trace spirals of light, {colours}"
+      - "a gentle tentacled being with a glowing crystalline core, {colours}"
+      - "a radiant sea-like creature with feathery arms that branch into patterns, {colours}"
+      - "a soft luminous creature trailing ribbons of light, {colours}"
+    variants: ["tendrils gathered close", "tendrils spread wide", "tendrils braiding into geometry"]
+    appearance:
+      - "A floating thing with many soft glowing arms, like a jellyfish made of light."
+      - "A drifting many-armed creature, translucent, curling patterns in the air."
+      - "Something like an octopus of light, gentle and slow."
+  creature_insectoid:
+    prompts:
+      - "a tall insectoid being with iridescent jewelled carapace and delicate crystalline wings, {colours}"
+      - "a mantis-like figure made of glowing glass segments, precise and calm, {colours}"
+      - "an insect-like being with many slender limbs of light and faceted eyes, {colours}"
+      - "a beetle-like presence with a shell of luminous mosaic tiles, {colours}"
+      - "a graceful winged insectoid figure with lace-like wings of light, {colours}"
+      - "an insectoid engineer with fine luminous antennae and jewelled segments, {colours}"
+    variants: ["still, watching", "limbs moving in careful patterns", "wings opening into fractal lace"]
+    appearance:
+      - "A tall insect-like being, all glassy segments and careful limbs."
+      - "Something like a mantis made of light, very precise."
+      - "An insectoid figure with lace wings and a jewelled shell."
+  creature_feline:
+    prompts:
+      - "a large luminous feline being with patterned glowing fur and calm eyes, {colours}"
+      - "a cat-like creature made of jewelled light, sitting upright, {colours}"
+      - "a radiant panther-like presence whose coat is a moving mosaic, {colours}"
+      - "a graceful feline figure with a mane of fine luminous threads, {colours}"
+      - "a big cat of light with geometric markings that shift as it breathes, {colours}"
+      - "a serene feline being with crystalline whiskers and glowing patterned fur, {colours}"
+    variants: ["sitting upright", "stretching slowly", "coat breaking into patterns"]
+    appearance:
+      - "A huge cat made of light, calm, its markings moving."
+      - "A feline thing with a coat like a moving mosaic."
+      - "Something cat-like and very old, watching me kindly."
+  machine_elf:
+    prompts:
+      - "a small bouncing self-transforming elf-like being made of jewelled geometry, {colours}"
+      - "a playful machine elf built from glowing interlocking shapes, constantly rebuilding itself, {colours}"
+      - "a cluster of tiny luminous elf-like figures made of clockwork light, {colours}"
+      - "an exuberant little being of folding crystal and spinning facets, {colours}"
+      - "a self-dribbling jewelled basketball-like creature with tiny arms of light, {colours}"
+      - "a mischievous geometric sprite made of nested glowing polyhedra, {colours}"
+    variants: ["mid-bounce", "holding up a glowing object", "unfolding into a new shape"]
+    appearance:
+      - "Small bouncing things made of jewelled geometry, rebuilding themselves constantly."
+      - "Little elf-like machines of light, very busy and very pleased."
+      - "Self-transforming gem-like creatures, chattering in shapes."
+  mythological:
+    prompts:
+      - "a small winged sprite of light with gossamer wings and a glowing aura, {colours}"
+      - "a graceful elfin figure with pointed ears and a cloak of leaves of light, {colours}"
+      - "a mythical winged creature made of radiant feathers and filigree, {colours}"
+      - "a gentle forest spirit of luminous bark and glowing moss, {colours}"
+      - "a fairy-tale being with antlers of light and a calm expression, {colours}"
+      - "a radiant phoenix-like bird of jewelled light, {colours}"
+    variants: ["hovering", "bowing slightly", "wings unfolding into patterns"]
+    appearance:
+      - "A winged sprite of light, like something out of a story."
+      - "An elfin figure in a cloak of glowing leaves."
+      - "A fairy-tale creature with antlers of light."
+  jester:
+    prompts:
+      - "a grinning jester figure in a harlequin suit of jewelled diamonds and a belled hat of light, {colours}"
+      - "a playful jester made of shifting patchwork geometry, juggling glowing spheres, {colours}"
+      - "a court jester of light with curling shoes and a collar of luminous points, {colours}"
+      - "a mischievous harlequin presence whose diamond pattern keeps rearranging, {colours}"
+      - "a tall jester figure bowing theatrically, costume of iridescent tiles, {colours}"
+      - "a laughing jester with a many-pointed hat that branches into fractals, {colours}"
+    variants: ["bowing", "juggling glowing shapes", "costume rearranging into patterns"]
+    appearance:
+      - "A jester, really, in a diamond suit that kept rearranging."
+      - "A grinning harlequin made of light, very pleased to see me."
+      - "A jester figure juggling shapes I could not count."
+  living_geometry:
+    prompts:
+      - "a living geometric being of nested rotating polyhedra with a sense of awareness, {colours}"
+      - "a conscious lattice of light that folds and unfolds like breathing, {colours}"
+      - "an intelligent mandala-like entity of turning rings and glowing nodes, {colours}"
+      - "a being made entirely of moving fractal structure, gently pulsing, {colours}"
+      - "a presence of interlocking crystalline shapes that seems to look back, {colours}"
+      - "a self-transforming geometric form with countless facets of light, {colours}"
+    variants: ["compact and turning", "expanding outward", "folding into itself"]
+    appearance:
+      - "Not a figure at all: a shape, aware, turning, looking back."
+      - "Living geometry, folding and unfolding like it was breathing."
+      - "A lattice of light that clearly knew I was there."
