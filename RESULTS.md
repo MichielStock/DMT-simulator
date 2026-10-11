@@ -182,3 +182,487 @@ Judged against BUILD.md §16.4 and docs/VISUAL_DIRECTION.md §4. Before this pas
 - **Waiting room — pass (§16.4), partial on the visual bar.** `waiting_room/waiting_room_v{7.5,9}_s23.png`, `waiting_room_v{5,9}_s11.png`: an endless lattice of ornate fractal blocks around crossing halls, now seen obliquely in perspective, with emissive edges that brighten with intensity; no banding or step artefacts. Words: "enclosing, ornate, deep" — but still a violet/blue-dominated haze for these palettes rather than "luminous, jewelled". KIFS kind (`verification/tmp/integrate/wr/wk.png`, seed 5): octagonal hall receding to infinity, multi-hued.
 - **Breakthrough — not reviewed: still the M3 placeholder glow** (`breakthrough/breakthrough_v9_s11.png`); M9. Generated assets themselves were reviewed by the assets agent (RESULTS "Assets").
 - **Overall:** the layers are coupled (the neural field shows on the room, the chrysanthemum centre tile and the waiting-room walls; one pulse drives all), palettes are coherent; real-session frames `sessions/2026-10-10_2222/frames/layer_enter_*.png` show the sequence room → form constants → chrysanthemum → waiting room → placeholder.
+
+## Guard periodicity (guard agent, S8, 2026-10-11)
+
+The SafetyLimiter's always-on pattern guard now counts and compresses only periodic high-contrast area (NOTES.md S8). Own stack: back end 8775, Vite (no HMR) 5178, headed Chrome on DISPLAY=:1, 1280×720, RTX 4090 (GPU at 210–780 MHz during the probes: it does not boost for this light load).
+
+Commands and results:
+- `cd frontend && npx tsc --noEmit`: clean. `npx vitest run`: **219 passed** (11 files; `tests/periodicity.test.ts` 40, protected `safetyLimiter.test.ts` 19 and `pipeline.test.ts` 7 unchanged and green).
+- `E2E_BASE_URL=http://127.0.0.1:5178 npx playwright test safety-limiter safety-guard`: **13 passed** (then the guard spec again with 2 adversarial cases added: **10 passed**). Protected cases (flashcheck, 5 s real time): bw10 general max 1.0/s, red8 0.5 general / 1.0 red, stripes 1.5/s with max periodic contrast 0.421 and 0 pattern frames (guard on from frame 1), bw10-debug 1.5/s, static control 0 engagements.
+- `WORSTCASE_LAYERS=form_constants,chrysanthemum WORSTCASE_SECONDS=20 WORSTCASE_SWEEP=0 E2E_BASE_URL=http://127.0.0.1:5178 scripts/worstcase_flash.sh`: **2 passed** — form_constants 0.5 flashes/s, 0 pattern frames (max periodic contrast 0.458, area 0); chrysanthemum 0.5/s, 0 (0.459, 0); limiter engaged 0×.
+
+`tests/e2e/safety-guard.spec.ts` (captures in `verification/captures/guard-<name>/`; static patterns at Michelson 0.9 = luminance 0.05/0.95; p = per-tile periodicity score on the GPU, min/median/max over the 2304 tiles):
+
+| Pattern | p min / median / max | periodic tiles | counted (frame 2) | guard frames 1–2 | flashcheck pattern frames (max block contrast) |
+|---|---|---|---|---|---|
+| rings, 30 px | 0.58 / 0.98 / 1.00 | 1.000 | 1.000 | 1, 1 | 0 (0.406) |
+| hex lattice, 24 px | 0.99 / 1.00 / 1.00 | 1.000 | 1.000 | 1, 1 | 0 (0.395) |
+| 45° stripes, 12 px | 0.98 / 1.00 / 1.00 | 1.000 | 1.000 | 1, 1 | 0 (0.425; 0.537 and 147 pattern frames before the exact-mean fix) |
+| checker, 16 px | 1.00 / 1.00 / 1.00 | 1.000 | 1.000 | 1, 1 | 0 (0.400) |
+| stripes, 80 px | 1.00 / 1.00 / 1.00 | 1.000 | 1.000 | 1, 1 | 0 (0.441) |
+| 2-px lines every 40 px | 1.00 / 1.00 / 1.00 | 1.000 | 1.000 | 1, 1 | 0 (not periodic for flashcheck) |
+| 36-spoke sunburst (custom) | — | 0.793 | 0.875 | 1, 1 | 0 (0.437; 12/32 blocks over 0.5 before hole filling) |
+| rings, 90 px (custom) | — | 0.997 | 1.000 | 1, 1 | 0 (0.421; 0.549 periodic with 4 directions, 75 % blocks bad) |
+| **photo** (sample room, full width, top-aligned) | 0 / 0.03 / 0.77 | 0.012 | 0.066 | **0 for 5 s** | 0 (flashcheck itself: 6/32 blocks "periodic", 0.98) |
+| **blobs** (40 blooms + 4 filaments on 0.05) | 0 / 0 / 0.70 | 0.048 | 0.072 | **0 for 5 s** | 0 |
+
+Every case: 0 red flashes, general flashes ≤ 0.5/s (the single black → pattern step at navigation). **Pre- vs post-limiter frames** (`capturePre()` / `capturePost()`, saved as `verification/captures/guard-{photo,blobs}/{pre,post}limiter.png`): max |difference| **0** in 8-bit sRGB for both — the limiter now passes aperiodic content through untouched (before S8 the same photo had `highContrastFraction` 0.98 and showed the guard's grey blotches, D-I10).
+
+Adversarial probe (`verification/tmp/guard/adv.sh`, single post-limiter frames through flashcheck's block criterion; pre → post blocks over 0.5): 2-px stripes 1.00 → 0, 4-px checker 1.00 → 0, 120-px stripes and 160-px stripes guard on (periodic 1.0), rings 120 px 0.375 → 0, 30° and 67.5° gratings 1.00 → 0, stripes drifting at 1 Hz 1.00 → 0, dark stripes 0.01/0.06 1.00 → 0, magenta-on-black 45° stripes 1.00 → 0, 3-turn spiral 1.00 → 0; 30 %-area patches of every pattern → 0; 26 %-area patches ≤ 8/32 blocks (not a violation; 1–8 edge blocks at 0.50–0.62). Aperiodic: sparse stars periodic 0.029 / counted 0.092, integer-hash white noise 0.016 / 0.099 — guard off. A sin()-hash "noise" is lattice-periodic and is flagged (guard on; safe direction).
+
+Product layers (scrub, seed 11, 20 samples over 2 s; "contrast-only" = what S3 counted before S8, guard engaged above 0.2): room v1 0.58 → counted **0.00**, room v3 0.28 → 0.01, form constants v5/7.5/9 0.04–0.06 → 0.02–0.04 (41 % of tiles periodic, contrast capped at source), chrysanthemum v5–9 ≤ 0.06 → ≤ 0.005, waiting room v7.5/9 0.13–0.17 → ≤ 0.004, breakthrough v9 0 → 0. Guard off on all of them, so what remains muted in those frames (violet-washed waiting room, flat mauve breakthrough placeholder, pastel form-constant bands; `verification/tmp/guard/layers_sheet.png`) is at the source, not the limiter.
+
+**Cost** (`window.__limiter.timeAnalysis(300)`: per-frame analysis latency incl. the synchronising readback, mean of 300, GPU at idle clocks): before S8 (tile + stats) 0.10–0.14 ms; with S8 (tile + luminance pyramid + stats + periodicity + reduce) **0.40–0.53 ms**, i.e. +0.3–0.4 ms per frame (the first, looped GPU port took 1.3–2.3 ms and was rewritten fully unrolled). Shader compile: ~2 s on a cold Chrome shader cache (first page load only), otherwise ~0.5 s for all limiter shaders.
+
+## Guard S8b: stripe-aware pattern guard (guard-fix agent, 2026-10-11)
+
+Fixes the S8 evasions found by adversarial review (NOTES.md S8b). Own stack: back end 8775 (`HYPERSPACE_SESSIONS_DIR=verification/tmp/guard-fix/sessions`, templates + procedural), Vite (no HMR) 5178 with `HYPERSPACE_API=http://127.0.0.1:8775`, headed Chrome on DISPLAY=:1, 1280×720, RTX 4090.
+
+Commands and results:
+- `cd frontend && npx tsc --noEmit`: clean. `npx vitest run`: **230 passed** (11 files; `tests/periodicity.test.ts` 51 = 40 S8 + 11 S8b: transition counting, chirp profile, central-window clamping, tensor orientation, pixel stripes on zone plates k 0.0002–0.0006 / red-only / corner-centred / zone-plate lattice / FM bars 0°, 11.25°, 90° / bar code / Poincaré rings, none on blooms + filaments, white noise, dense dots, a vignette; grid stripes on the 4-ring zone plate, none on 200-px stripes or a vignette; `dilateMask`). Protected `safetyLimiter.test.ts` 19 and `pipeline.test.ts` 7 unchanged and green.
+- `E2E_BASE_URL=http://127.0.0.1:5178 npx playwright test safety-limiter safety-guard --workers=1`: **58 passed** (8.6 min): the 5 protected safety-limiter cases (bw10-debug 1.5 general flashes/s, static control no engagement), the 8 S8 periodic cases, **43 new S8b evasion cases** and photo / blobs (pre vs post max |diff| **0** for both).
+- `WORSTCASE_LAYERS=form_constants WORSTCASE_SECONDS=20 WORSTCASE_SWEEP=0 E2E_BASE_URL=http://127.0.0.1:5178 scripts/worstcase_flash.sh`: **1 passed** — 21.4 s of trip, limiter engaged 0×, general 0.5 flashes/s, 0 pattern frames (max periodic contrast 0.458, area 0).
+- Single-frame screen of all 205 adversarial / control cases (`verification/tmp/guard-fix/probe.mjs` + flashcheck's block criterion on the post-limiter frame; S8 → S8b): every case that had more than 25 % bad blocks after the limiter now has ≤ 25 %, except four aperiodic controls (below). Real-time 5-s captures of 55 cases with `verification/tmp/guard-fix/run.ts`: all evasions guard on from the first frame, never off, flashcheck exit 0 with 0 pattern frames.
+
+S8b evasion cases in `tests/e2e/safety-guard.spec.ts` (5 s real time at 30 fps, 6 s for the alternating case; captures in `verification/captures/guard-<name>/`; "S8" = the S8 limiter on a single frame at ~0.6 s: guard, counted fraction, fraction of flashcheck blocks over 0.5 after the limiter):
+
+| Case | S8 (single frame): guard / counted / post blocks > 0.5 | S8b counted (stripe, periodic) frame 2 | guard frames 1–2 | flashcheck 5 s: pattern frames (max periodic contrast) | flashes general / red |
+|---|---|---|---|---|---|
+| zone_k0.0003 | 0 / 0 / 1.000 | 0.999 (0.929, 0.000) | 1, 1 | 0 (0.389) | 0.5 / 0.0 |
+| zone_k0.0002 | 0 / 0 / 0.875 | 0.996 (0.918, 0.000) | 1, 1 | 0 (0.379) | 0.5 / 0.0 |
+| zone_k0.0004 | 0 / 0 / 1.000 | 1.000 (0.965, 0.000) | 1, 1 | 0 (0.396) | 0.5 / 0.0 |
+| zone_k0.0006 | 1 / 0.359 / 0.750 | 1.000 (0.986, 0.316) | 1, 1 | 0 (0.400) | 0.5 / 0.0 |
+| zonesq_k0.0003 | 0 / 0.095 / 1.000 | 1.000 (0.977, 0.012) | 1, 1 | 0 (0.389) | 0.5 / 0.0 |
+| zone_ellip | 0 / 0.109 / 1.000 | 1.000 (0.976, 0.045) | 1, 1 | 0 (0.400) | 0.5 / 0.0 |
+| zone_k0.0003_magenta_dark | 0 / 0 / 1.000 | 0.999 (0.929, 0.000) | 1, 1 | 0 (0.391) | 0.5 / 0.0 |
+| zone_k0.0003_thin | 0 / 0.076 / 1.000 | 1.000 (0.925, 0.010) | 1, 1 | 0 (0.394) | 0.5 / 0.0 |
+| zone_k0.0003_red | 0 / 0.095 / 1.000 | 1.000 (0.977, 0.012) | 1, 1 | 0 (0.390) | 0.5 / 0.5 |
+| zone_offcentre | 1 / 0.201 / 0.906 | 0.980 (0.972, 0.155) | 1, 1 | 0 (0.400) | 0.5 / 0.0 |
+| zoneplate | 1 / 0.359 / 0.750 | 0.995 (0.853, 0.000) | 1, 1 | 0 (0.372) | 0.5 / 0.0 |
+| zp_fast | 0 / 0.016 / 1.000 | 1.000 (0.962, 0.002) | 1, 1 | 0 (0.396) | 0.5 / 0.0 |
+| zp_slow | 0 / 0 / 0.750 | 0.978 (0.839, 0.000) | 1, 1 | 0 (0.374) | 0.5 / 0.0 |
+| zp_vslow | 0 / 0 / 0.250 | 0.927 (0.736, 0.000) | 1, 1 | 0 (0.273) | 0.5 / 0.0 |
+| zp_square | 0 / 0.071 / 0.875 | 0.984 (0.977, 0.009) | 1, 1 | 0 (0.379) | 0.5 / 0.0 |
+| zone_k0.0003_disc30 | 0 / 0.016 / 0.375 | 0.362 (0.234, 0.002) | 1, 1 | 0 (0.000) | 0.5 / 0.0 |
+| zone_k0.0003_area30 | 0 / 0 / 0.250 | 0.269 (0.188, 0.000) | 1, 1 | 0 (0.245) | 0.5 / 0.0 |
+| zone_k0.0003_corner30 | 0 / 0.06 / 0.250 | 0.351 (0.318, 0.093) | 1, 1 | 0 (0.477) | 0.5 / 0.0 |
+| zp_area30 | 0 / 0 / 0.250 | 0.314 (0.236, 0.000) | 1, 1 | 0 (0.281) | 0.5 / 0.0 |
+| zonelattice_640x360 | 0 / 0 / 1.000 | 1.000 (0.898, 0.000) | 1, 1 | 0 (0.372) | 0.5 / 0.0 |
+| zonelattice_427x360 | 0 / 0.063 / 1.000 | 1.000 (0.910, 0.010) | 1, 1 | 0 (0.379) | 0.5 / 0.0 |
+| fmsq_L480_T24_d0.025_a0 | 0 / 0.188 / 1.000 | 1.000 (1.000, 0.125) | 1, 1 | 0 (0.343) | 0.5 / 0.0 |
+| fmsq_L480_T24_d0.03_a0 | 0 / 0.188 / 1.000 | 1.000 (1.000, 0.125) | 1, 1 | 0 (0.366) | 0.5 / 0.0 |
+| fmsq_L480_T24_d0.025_a90 | 0 / 0.167 / 1.000 | 1.000 (1.000, 0.111) | 1, 1 | 0 (0.343) | 0.5 / 0.0 |
+| fmsq_L480_T24_d0.025_a11.25 | 1 / 0.505 / 0.812 | 1.000 (1.000, 0.348) | 1, 1 | 0 (0.372) | 0.5 / 0.0 |
+| fmsq_L640_T32_d0.02_a0 | 1 / 0.313 / 1.000 | 1.000 (1.000, 0.250) | 1, 1 | 0 (0.365) | 0.5 / 0.0 |
+| fmsq_L480_T24_d0.03_a80 | 1 / 0.354 / 0.938 | 1.000 (1.000, 0.269) | 1, 1 | 0 (0.372) | 0.5 / 0.0 |
+| fmsq_L600_T30_d0.022_a30 | 1 / 0.503 / 0.688 | 1.000 (0.998, 0.413) | 1, 1 | 0 (0.389) | 0.5 / 0.0 |
+| saw_L400_a0 | 1 / 0.563 / 0.750 | 1.000 (1.000, 0.469) | 1, 1 | 0 (0.362) | 0.5 / 0.0 |
+| am_c13_e300_a30 | 1 / 1 / 0.531 | 1.000 (0.650, 1.000) | 1, 1 | 0 (0.000) | 0.5 / 0.0 |
+| sq25_slowsine | 1 / 0.678 / 0.500 | 0.678 (0.000, 1.000) | 1, 1 | 0 (0.269) | 0.5 / 0.0 |
+| grad_radial_sq13 | 1 / 1 / 0.750 | 1.000 (0.987, 1.000) | 1, 1 | 0 (0.306) | 0.5 / 0.0 |
+| ringblk_h | 1 / 0.681 / 0.500 | 0.681 (0.653, 0.872) | 1, 1 | 0 (0.200) | 0.5 / 0.0 |
+| ring30_thick | 1 / 0.639 / 0.500 | 0.639 (0.572, 0.841) | 1, 1 | 0 (0.000) | 0.5 / 0.0 |
+| poincare_rings | 0 / 0.075 / 0.375 | 0.581 (0.516, 0.023) | 1, 1 | 0 (0.310) | 0.5 / 0.0 |
+| persp_floor | 1 / 0.444 / 0.500 | 0.780 (0.650, 0.215) | 1, 1 | 0 (0.368) | 0.5 / 0.0 |
+| blue060 | 0 / 0 / 1.000 | 1.000 (1.000, 1.000) | 1, 1 | 0 (0.000) | 0.0 / 0.0 |
+| darkgrey | 0 / 0 / 1.000 | 1.000 (1.000, 1.000) | 1, 1 | 0 (0.000) | 0.0 / 0.0 |
+| fp_randbars | 0 / 0.063 / 0.750 | 1.000 (1.000, 0.031) | 1, 1 | 0 (0.315) | 0.5 / 0.0 |
+| zp_drift1hz | 0 / 0 / 0.875 | 0.986 (0.894, 0.000) | 1, 1 | 0 (0.379) | 1.5 / 0.0 |
+| darkgrey_drift | 0 / 0 / 1.000 | 1.000 (1.000, 1.000) | 1, 1 | 0 (0.000) | 0.0 / 0.0 |
+| zp_alt_stripes12 | 0 / 0 / 0.875 | 0.995 (0.853, 0.000) | 1, 1 | 0 (0.400) | 1.0 / 0.0 |
+| zp_scale05 | 0 / 0.016 / 0.875 | 0.995 (0.853, 0.000) | 1, 1 | 0 (0.372) | 0.5 / 0.0 |
+
+Aperiodic controls (single frame, counted fraction; the guard engages above 0.2): sample photo top crop 0.077, centre crop 0.108, 2× zoom 0.043, at render scale 0.5 0.089; blobs 0.072, at render scale 0.5 0.105; fbm 0.028 / fbm drifting 0.056; dense stars 0.063; rotating stars 0.104; Worley edges 0.189 — guard off on all. Now ON (new false positives): random lines 0.55, Voronoi edges 0.37, tree-branch noise 0.34; fbm fine 0.201 (just on); still on as under S8: turbulence filaments, Worley cells, marble, quasicrystal. flashcheck's own verdict on the post-limiter frame still fails for the centre-crop photo (0.375 of blocks) and its 2× zoom (0.31), both with the guard off and the frame untouched (flashcheck calls the bookshelves periodic), and for tree-branch noise (0.344, guard on) and Worley cells (0.281, guard on; 0.438 under S8).
+
+Looked at (post-limiter capture frames, `verification/tmp/guard-fix/sheet_caps_r1.png`, `sheet_spec.png`): zone plates, zone lattice, FM and sawtooth trains, the bar code and the perspective floor come out as soft grey low-contrast rings / bars; amplitude-modulated stripes become their smooth envelope; stripes around a black centre are flattened next to the black with a soft dark halo; the 30 % disc zone plate is a soft grey disc whose surround is lifted to grey in tile-sized steps (ugly but harmless); the red-only zone plate becomes red / grey rings (luminance contrast compressed, chroma contrast remains); dark-magenta rings become magenta / lavender; saturated-blue stripes stay visibly blue on dark blue at low luminance contrast. Photo and blobs are bit-identical to the input.
+
+Product layers (scrub, seed 11, 20 samples over 2 s; counted = what the guard counts, engaged above 0.2): room v1 0.000 (stripe 0.000), room v3 0.006, form constants v5 / 7.5 / 9 0.023–0.028 (max 0.041; stripe tiles 0.15, but capped at source below the 0.45 tile contrast), chrysanthemum v5–9 ≤ 0.006, waiting room v7.5 / 9 0.000, breakthrough v9 0.000. Guard off on all of them (`verification/tmp/guard-fix/layers_sheet.png`: unchanged from S8).
+
+Cost (`window.__limiter.timeAnalysis(300)`, photo and rings, same session): S8 0.44–0.49 ms per frame, S8b **0.61–0.65 ms** (+0.15 ms: structure-tensor pass with mips, transition counting in the unrolled profile shader, the 9×9 guard-cf pass).
+
+## Guard S8c: local-spectrum pattern guard, gamut-aware compression, global slew, sqrt readback (guard-fix agent, 2026-10-11)
+
+Fixes the round-2 evasions of S8b (NOTES.md S8c). Own stack: back end 8775 (`HYPERSPACE_SESSIONS_DIR=verification/tmp/guard-fix/sessions`, templates + procedural), Vite (no HMR) 5178 with `HYPERSPACE_API=http://127.0.0.1:8775`, headed Chrome on DISPLAY=:1, 1280×720, RTX 4090.
+
+Commands and results:
+- `cd frontend && npx tsc --noEmit`: clean. `npx vitest run`: **238 passed** (11 files; `tests/periodicity.test.ts` 59 = 51 + 8 S8c: one grating / egg-crate / hex lattice put their energy in 1 / 2 / 3 peaks, flat and white-noise windows are not sparse, 1-cycle gratings are not candidates, window origins; at 1280×720: crossed chirps (sine, square, 24 and 28 px), a z² hex lattice, a log-polar plaid full screen and in a 30 % corner, three 48-px pairs in edge bands are spectral, blooms / 1/f value noise / white noise are not). Protected `safetyLimiter.test.ts` 19 and `pipeline.test.ts` 7 unchanged and green.
+- `E2E_BASE_URL=http://127.0.0.1:5178 npx playwright test safety-limiter safety-guard --workers=1`: **92 passed** (13.7 min): the 5 protected safety-limiter cases (bw10 1.5 general flashes/s, red8 1.0 general / 1.0 red, stripes 2.0 (fine detail; tile 1.5) with max periodic contrast 0.372 and 0 pattern frames, bw10-debug 1.5, static control no engagement), the 8 S8 periodic cases, the 43 S8b cases, **34 new S8c cases** and photo / blobs (pre vs post max |diff| **0** for both).
+- `WORSTCASE_LAYERS=form_constants WORSTCASE_SECONDS=20 WORSTCASE_SWEEP=0 E2E_BASE_URL=http://127.0.0.1:5178 scripts/worstcase_flash.sh`: **1 passed** — 21.4 s of trip, limiter engaged 0×, general 0.5 flashes/s, 0 pattern frames (max periodic contrast 0.457, area 0).
+- Single-frame screen of the whole 498-case corpus (every attack-geometry-r2 / attack-dynamics-r2 case plus the 205 earlier adversarial and control cases; `verification/tmp/guard-fix/r2/probe2.mjs` + flashcheck's block criterion on the post-limiter frame, `r2/fc_r2b.txt`): 0 shader errors; **every case has ≤ 25 % bad blocks after the limiter** except the centre-crop photo (0.375) and its 2× zoom (0.312), both with the guard off and the frame untouched (flashcheck's own call on the bookshelves, as under S8b). S8b: 178 such failures. No control that was off under S8b is on under S8c; 49 pattern cases newly engage (all sw2 / bc / corner / band / quantisation cases).
+
+S8c evasion cases in `tests/e2e/safety-guard.spec.ts` (5 s real time at 30 fps, 7 s for the legal fading pattern; captures in `verification/captures/guard-<name>/`; "S8b" = flashcheck pattern frames reported by the adversarial review; counted = what the guard counts on frame 2, with the stripe and spectral tile fractions):
+
+| Case | S8b pattern frames (reported) | S8c counted frame 2 (stripe, spectral) | guard frames 1–2 | flashcheck 5 s: pattern frames (max periodic contrast) | flashes general / red |
+|---|---|---|---|---|---|
+| sw2_a190_p2.75_D1200_T24 | 150 | 1.000 (0.025, 1.000) | 1, 1 | 0 (0.372) | 0.5 / 0.0 |
+| sw2_a190_p3.0_D1300_T24 | 150 | 1.000 (0.013, 1.000) | 1, 1 | 0 (0.372) | 0.5 / 0.0 |
+| sw2_a210_p3.0_D1100_T28 | 150 | 0.918 (0.008, 0.918) | 1, 1 | 0 (0.808) | 0.5 / 0.0 |
+| bc_red | 150 | 1.000 (0.025, 1.000) | 1, 1 | 0 (0.373) | 0.5 / 0.5 |
+| bc_green_cc | 150 | 1.000 (0.025, 1.000) | 1, 1 | 0 (0.373) | 0.5 / 0.0 |
+| bc_sq | 150 | 1.000 (0.045, 1.000) | 1, 1 | 0 (0.389) | 0.5 / 0.0 |
+| bc_drift1hz | 29 | 1.000 (0.023, 1.000) | 1, 1 | 0 (0.372) | 1.0 / 0.0 |
+| bc_corner30 | 0 (guard 0; 8/32 blocks) | 0.288 (0.000, 0.266) | 1, 1 | 0 (0.362) | 0.5 / 0.0 |
+| trichirp_p4_D2200_T22 | 150 | 1.000 (0.054, 1.000) | 1, 1 | 0 (0.354) | 0.5 / 0.0 |
+| bichirp_p4_D2200_T22_sq | 150 | 1.000 (0.019, 1.000) | 1, 1 | 0 (0.389) | 0.5 / 0.0 |
+| z2hex_k0.0003 | 150 | 0.997 (0.039, 0.944) | 1, 1 | 0 (0.366) | 0.5 / 0.0 |
+| zonehex_k0.0006 | 150 | 1.000 (0.016, 0.965) | 1, 1 | 0 (0.383) | 0.5 / 0.0 |
+| logpolar_plaid_N100 | 150 | 1.000 (0.000, 0.944) | 1, 1 | 0 (0.372) | 0.5 / 0.0 |
+| logpolar_plaid_N100_corner30 | 150 | 0.278 (0.000, 0.247) | 1, 1 | 0 (0.368) | 0.5 / 0.0 |
+| logpolar_plaid_N72_corner30 | 150 | 0.272 (0.000, 0.253) | 1, 1 | 0 (0.355) | 0.5 / 0.0 |
+| zone_grain0.3_c3 | 150 | 1.000 (0.533, 0.936) | 1, 1 | 0 (0.385) | 0.5 / 0.0 |
+| N_bands_tb20_h48 | 143 | 0.389 (0.000, 0.389) | 1, 1 | 0 (0.0) | 0.5 / 0.0 |
+| N_bands_tb15_h36 | 143 | 0.278 (0.000, 0.278) | 1, 1 | 0 (0.0) | 0.5 / 0.0 |
+| N_bands_tb15_h36_grey | 144 | 0.278 (0.000, 0.278) | 1, 1 | 0 (0.0) | 0.5 / 0.0 |
+| N_quant_dark0212 | 141 | 1.000 (1.000, 1.000) | 1, 1 | 0 (0.0) | 0.0 / 0.0 |
+| N_white_blue20 | 135 | 1.000 (1.000, 1.000) | 1, 1 | 0 (0.399) | 0.5 / 0.0 |
+| N_cyan_blue_diag12 | 143 | 1.000 (1.000, 1.000) | 1, 1 | 0 (0.379) | 0.5 / 0.0 |
+| N_white_red20 | 141 | 1.000 (1.000, 1.000) | 1, 1 | 0 (0.4) | 0.5 / 0.0 |
+| N_white_blue_sine_rings30 | 139 | 1.000 (0.995, 1.000) | 1, 1 | 0 (0.39) | 0.5 / 0.0 |
+| N_white_blue_zoneplate | 144 | 1.000 (0.977, 0.938) | 1, 1 | 0 (0.39) | 0.5 / 0.0 |
+| N_white_blue_meancap | 144 | 1.000 (1.000, 1.000) | 1, 1 | 0 (0.397) | 0.5 / 0.0 |
+| N_violet_lilac_drift1 | 101 | 1.000 (1.000, 1.000) | 1, 1 | 0 (0.403) | 1.5 / 0.0 |
+| N_white_blue_drift19 | 43 | 1.000 (1.000, 1.000) | 1, 1 | 0 (0.399) | 1.0 / 0.0 |
+| N_flicker_then_black | 59 | 1.000 (1.000, 1.000) | 1, 1 | 0 (0.405) | 1.5 / 0.0 |
+| N_flicker_then_dim | 57 | 1.000 (1.000, 1.000) | 1, 1 | 0 (0.404) | 1.5 / 0.0 |
+| N_flickerzone_pattern_off | 75 | 0.719 (0.700, 0.658) | 1, 1 | 0 (0.751) | 1.0 / 0.0 |
+| N_lowc_pattern_off_flicker | 62 | 0.078 (0.578, 0.656) | 0, 0 | 0 (1.0) | 1.0 / 0.0 |
+| N_rings_fadeout_flicker | 36 | 0.688 (0.571, 0.688) | 1, 1 | 0 (0.398) | 1.5 / 0.0 |
+| N_frame_alt_black | 17 | 1.000 (1.000, 1.000) | 0, 1 | 0 (0.416) | 1.5 / 0.0 |
+
+N_lowc_pattern_off_flicker is a LEGAL pattern (Michelson 0.33): the guard correctly stays off; the S8b failure was the limiter's own fade. Its max periodic contrast 1.0 (4 of 32 blocks, never more) and N_flickerzone_pattern_off's 0.751 (4 blocks) are the blocks straddling the input's own edge between the low-passed flicker zone (grey) and the black / fading right side. N_frame_alt_black: frame 1 is black (guard 0); from frame 2 the guard is 1 on pattern frames and ~0.98 on the black ones (the spec asserts ≥ 0.9 on every later frame).
+
+Looked at (post-limiter capture frames, `verification/tmp/guard-fix/r2/sheet_geo.png`, `sheet_dyn.png`): crossed chirps, the tri-chirp, the z² hex lattice and the log-polar plaid come out as soft light-grey low-contrast lattices; bc_red is red / dark-red egg-crate, bc_green_cc green / pink at nearly equal luminance; the 30 % corner patches are soft grey with the surrounding black lifted to grey in tile-sized steps (the S8b halo, ugly but harmless); the noisy zone plate is soft grey rings with grain; white/blue stripes, rings and zone plate are light grey / periwinkle (luminance contrast gone, chroma stays), violet/lilac lilac / pale violet; edge bands are smooth grey bands with a soft gradient into the black middle; the fading patterns (N_flicker_then_black frame 90, N_lowc frames 50 → 114) now fade as a whole, keeping their (compressed or legal) contrast instead of turning into black-and-grey stripes.
+
+Aperiodic controls (single frame, counted; the guard engages above 0.2): sample photo top crop 0.134, centre crop 0.160, 2× zoom 0.131, render scale 0.5 0.149; blobs 0.074 (render scale 0.5 0.111); fbm 0.028, fbm drifting 0.065, dense stars 0.063, rotating stars 0.102, Worley edges 0.189 — guard off on all. On, as under S8b: fbm fine 0.228, random lines, Voronoi, tree branches, turbulence filaments, Worley cells, marble, quasicrystal, FP_grass / FP_rain / FP_starstreaks.
+
+Product layers (scrub, seed 11, 20 samples over 2 s, `verification/tmp/guard-fix/r2/probe_layers2.mjs`): room v1 counted 0.084 (spectral 0.094; S8b 0.000), room v3 0.019, form constants v5 / 7.5 / 9 0.069–0.076 (max 0.095; 41 % periodic, contrast capped at source), chrysanthemum v5–9 ≤ 0.006 (max 0.020), waiting room v7.5 / 9 0.001, breakthrough v9 0.000 — guard off on all.
+
+Cost (`window.__limiter.timeAnalysis(300)`, photo and rings, same session, idle GPU clocks): S8b 0.61–0.65 ms, S8c **0.85–0.90 ms** per frame (+0.25 ms). The first S8c port (one fragment per window running the greedy peak search) measured 1.9 ms; packing 2×2 bins per texel, rotation twiddles and splitting the search into strip / pick passes brought it down.
+
+## Form constants polish (polish-form_constants-r1, 2026-10-11)
+
+Gallery `GALLERY_LAYERS=form_constants scripts/gallery.sh` against my stack (back end 8772, Vite no-HMR 5175): **12/12 frames pass** (pattern ratios s11 v3–v9 7203 / 2918 / 201 / 44, challenge 203; s23 146 / 122 / 104 / 93, challenge 132). Worst case `WORSTCASE_LAYERS=form_constants WORSTCASE_SECONDS=20 WORSTCASE_SWEEP=0`: **PASS** — 21.4 s of trip, limiter engaged 0×, general/red flashes 0.0/s, pattern frames 0 (max area 0.094, i.e. 3 of 32 blocks near the centre), motion windows 0, max mean luminance 0.051. `npx vitest run tests/neuralField.test.ts` 12/12, `npx tsc --noEmit` clean. Frame cost: renderScale 1.0, frameMs 16.67 (vsync) on all 12 frames.
+
+Measurements (linear luminance from the sRGB PNGs; S = HSV saturation of the brighter half):
+
+| frame | p5 | median | p95 | mean | S (bright half) | honest words |
+|---|---|---|---|---|---|---|
+| v5_s11 (rings, neon) | 0.031 | 0.039 | 0.064 | 0.044 | 0.83 | saturated, neon, dim |
+| v7.5_s11 | 0.030 | 0.041 | 0.066 | 0.045 | 0.90 | neon, deep, saturated |
+| v9_s11 | 0.031 | 0.046 | 0.074 | 0.050 | 0.95 | electric, intricate, deep |
+| v9_s11_challenge | 0.030 | 0.048 | 0.072 | 0.050 | 0.95 | acidic, harsh, busy |
+| v5_s23 (lattice, lunar) | 0.031 | 0.034 | 0.063 | 0.040 | 0.75 | cool, cellular, dim |
+| v7.5_s23 | 0.030 | 0.034 | 0.065 | 0.040 | 0.82 | jewelled, cellular, cool |
+| v9_s23 | 0.031 | 0.036 | 0.073 | 0.043 | 0.87 | jewelled, intricate, cellular |
+| v9_s23_challenge | 0.031 | 0.034 | 0.073 | 0.043 | 0.80 | acid, staring, harsh |
+
+Targets: p5 ≤ 0.05 met (0.030–0.031); median 0.05–0.2 NOT met (0.034–0.048, just under); p95 ≥ 0.3 NOT met (0.063–0.074; see NOTES D-P-form_constants-1/limits: a full-screen periodic pattern held under the guard's 0.45 tile test cannot carry 5 % bright area without engaging it); saturation ≥ 0.5 met (0.75–0.95). Compared with the pre-polish frames (grey-blue discs on a flat blue-grey plateau, pastel, v5 ≈ v9): dark valleys, saturated tubes, filaments and filigree, glints, intensity visibly changes detail and chroma. The review bar words "luminous, jewelled, deep, alive, intricate" fit v9 and the lattices partly; v5 frames are still "dim", and the base reads as dark slate, not near-black.
+
+## Room polish (polish-room-r1, 2026-10-11)
+
+Stack: back end 8771, Vite no-HMR 5174, sessions `verification/tmp/polish-room-r1/sessions`. Gallery `GALLERY_LAYERS=room scripts/gallery.sh`: **16/16 frames pass** (final run; an intermediate run failed `blank` on `room_v3_s23_eyes` and `room_v9_s23_challenge`, fixed at source by colour regions, see NOTES D-P-room-5). Worst case `WORSTCASE_LAYERS=room WORSTCASE_SECONDS=20 WORSTCASE_SWEEP=0`: **PASS** — general 0.0/s, red 0.0/s, pattern frames 0 (max area 0.062, max periodic contrast 0.736), motion windows 0, max mean luminance 0.069, limiter engaged 0×. vitest `tests/room.test.ts` 23/23, `npx tsc --noEmit` clean.
+
+Measurements (linear luminance from the sRGB PNGs; S = HSV saturation of the brighter half of the pixels):
+
+| frame | p5 | median | p95 | mean | S | honest words |
+|---|---|---|---|---|---|---|
+| v5_s11 (neon) | 0.014 | 0.054 | 0.409 | 0.104 | 0.54 | vivid, neon, glowing (islands blobby) |
+| v7.5_s11 | 0.013 | 0.049 | 0.422 | 0.104 | 0.57 | deep, glowing, neon |
+| v9_s11 | 0.013 | 0.050 | 0.423 | 0.105 | 0.57 | luminous window, deep, psychedelic |
+| v5_s23 (lunar) | 0.013 | 0.057 | 0.415 | 0.106 | 0.66 | cool, sapphire, moody |
+| v7.5_s23 | 0.013 | 0.053 | 0.419 | 0.106 | 0.67 | sapphire, deep, glowing edges (window pale) |
+| v9_s23 | 0.013 | 0.054 | 0.419 | 0.106 | 0.66 | deep, cool, jewel-toned |
+| v3_s11_eyes | 0.021 | 0.024 | 0.030 | 0.025 | 0.76 | velvety, deep, starlit |
+| v5_s11_eyes | 0.021 | 0.024 | 0.032 | 0.025 | 0.76 | deep, starlit, velvety (lace dim) |
+| v3_s23_eyes | 0.021 | 0.022 | 0.030 | 0.024 | 0.69 | sapphire-garnet, starlit, soft |
+| v5_s23_eyes | 0.021 | 0.022 | 0.032 | 0.024 | 0.69 | jewel-toned, starlit, intricate centre |
+| v9_s11_challenge | 0.016 | 0.019 | 0.026 | 0.020 | 0.72 | cold, dark, tight |
+| v9_s23_challenge | 0.016 | 0.019 | 0.023 | 0.019 | 0.69 | dark, crowded, ominous |
+
+Targets on the v 7.5 frames: p5 ≤ 0.05 met (0.013); median 0.05–0.2 met on s23 (0.053), borderline on s11 (0.049); p95 ≥ 0.3 met (0.42); S ≥ 0.5 met (0.57 / 0.67). Before this pass (`verification/gallery_before_polish/room/`, gallery of 2026-10-10): pink-white haze over the whole room, pastel, flat; eyes-closed field grey-blue blurred dots on a slate ground.
+
+Photo room (sample `assets/sample/room.jpg` + depth, `verification/tmp/polish-room-r1/shoot.mjs photo`, post-limiter canvas, seed 11; `verification/tmp/polish-room-r1/photo_final/`): guard never engaged (counted 0.145 / 0.142 / 0.063 / 0.064 at v 1 / 3 / 5 / 7.5; pre- vs post-limiter difference only from animation between the two grabs). v 1 "the room itself, natural, calm" (no blotches); v 3 "vivid, warm, a little hazy around the window" (median 0.071, S 0.45); v 5 "saturated, psychedelic, neon-tinged, still the room" (p5 0.009, median 0.064, p95 0.38, S 0.55); v 7.5 "magenta, glowing window, dreamlike" (S 0.56). Eyes closed on the photo session: "deep violet, starlit", but the neural-field overlay's bright centre rings show there (Integration notes).
+
+Frame cost: room layer 1.3–1.8 ms GPU at 1280×720 (v 5/9, eyes open/closed); gallery sidecars renderScale 1.0, frameMs 16.66–16.68 (vsync-bound) on every frame.
+
+## Chrysanthemum polish (polish-chrysanthemum-r1, 2026-10-11)
+
+Gallery (`GALLERY_LAYERS=chrysanthemum … scripts/gallery.sh`, Vite 5176 / back end 8773, post-limiter canvas): **12/12 frames pass** (blank, white, pattern, palette, stuck); pattern scores 8.3–35.6 (radial harmonic 17–18 = the 18-petal outline). Palettes: s11 = neon, s23 = lunar. Every frame renderScale 1.0, frameMs 16.66–16.67 (vsync-bound).
+
+Review words (looked at each PNG; before = `verification/gallery_before_polish/chrysanthemum/`, "dusty mauve/teal kaleidoscope under a grey-violet haze, muddy, the lace dim orange on grey"):
+| frame | words | weak spot |
+|---|---|---|
+| v5_s11 | luminous, jewelled, kaleidoscopic | central cell carries the neural field's concentric pink "target" rings; pink/violet dominate, teal only as accents |
+| v5_s23 | luminous, sapphire-deep, crystalline | lace ring dim at v 5 (by design, lace fades in 5 → 8.5) |
+| v7.5_s11 | luminous, jewelled, ornate | glowing outline "aura" with small bulbs at a few petal tips |
+| v7.5_s23 | deep, luminous, crystalline | Poincaré shrinkage only ~2 rings deep in a still (cells are large (5,4,2) polygons) |
+| v9_s11 | luminous, jewelled, ornate | little visible difference from v 7.5 in a still |
+| v9_s23 | deep, luminous, crystalline | as v 7.5 |
+| v9_s11_challenge | cold, intricate, veined | outer half of the petals soft (detail dissolves to dust under the faster flow): slightly murky there |
+| v9_s23_challenge | jewelled, intricate, cold | petal tips soft dust; centre (rings of small cells) is the best shrinkage view of the set |
+Also looked at v1/v3 (both seeds): luminous, kaleidoscopic; worst-case capture frames 100/250/400/600: four different groups, one mid-melt, all luminous and intricate.
+
+Measurements (`verification/tmp/polish-chrysanthemum-r1/measure.py`, linear luminance; S = HSV saturation of the brighter half):
+| frame | p5 | median | p95 | S bright half |
+|---|---|---|---|---|
+| v5_s11 | 0.006 | 0.025 | 0.174 | 0.67 |
+| v5_s23 | 0.006 | 0.025 | 0.128 | 0.72 |
+| v7.5_s11 | 0.007 | 0.044 | 0.204 | 0.64 |
+| v7.5_s23 | 0.006 | 0.039 | 0.164 | 0.73 |
+| v9_s11 | 0.007 | 0.044 | 0.210 | 0.64 |
+| v9_s23 | 0.006 | 0.040 | 0.170 | 0.73 |
+| v9_s11_challenge | 0.004 | 0.035 | 0.231 | 0.65 |
+| v9_s23_challenge | 0.005 | 0.027 | 0.190 | 0.73 |
+Before (v7.5_s23): p5 0.016, median 0.073, p95 0.117, S 0.57 (a 0.07–0.12 plateau). Targets: p5 ≤ 0.05 met; S ≥ 0.5 met; **median 0.05–0.2 not met (0.025–0.044) and p95 ≥ 0.3 not met (0.13–0.23)** — the dark base is 0.007–0.016 and the bright accents are thin. A brighter variant (cores 0.30 / bands 0.107 / base 0.024, iteration zb) reached median 0.031–0.051, p95 0.14–0.24, but turned the lunar base into a royal-blue plateau and raised the guard count to 0.175; reverted.
+
+Limiter pattern guard on the final frames (`pipeline.limiter.status`, max of 4 samples over 1 s): highContrastFraction v5_s11 0.059, v7.5_s23 0.107, v9_s11_challenge 0.108, v9_s23_challenge 0.165 (engages at 0.2; never engaged in the captures). Before this pass's per-cell variation and lace change the same frames counted 0.13–0.68 (guard engaged under the challenge, visible grey blotches).
+
+Worst case (`WORSTCASE_LAYERS=chrysanthemum WORSTCASE_SECONDS=20 WORSTCASE_SWEEP=0 … scripts/worstcase_flash.sh`, headed Chrome, real time): **PASS** — 690 frames at 30 fps (23.0 s), general flashes max 0.5/s (limit 3), red 0, pattern frames 0 (max periodic area 0.062, max periodic contrast 0.906), motion windows 0, max mean luminance 0.083, limiter engaged 0×.
+
+Tests: `npx vitest run tests/hyperbolic.test.ts` 53 passed (37 before; +16: cell-centre tracking, jewel/dark-base/contrast palettes, 2 s crossfade); full `npx vitest run` 258 passed; `npx tsc --noEmit` clean.
+
+## Waiting room polish (polish-waiting_room-r1, 2026-10-11)
+Files: `frontend/src/layers/waitingRoom.ts`, `frontend/src/layers/glsl/waitingRoom.frag.glsl`, `frontend/tests/hyperbolic.test.ts` (+8 waiting-room tests). Decisions D-P-waiting_room-1…6 in NOTES.md.
+
+Gallery (`GALLERY_LAYERS=waiting_room … scripts/gallery.sh` on Vite 5177 / back end 8774): **12/12 frames pass** (blank/white/palette/stuck). Both gallery seeds plan a **mandelbox** (11 neon, 23 lunar); kifs was reviewed from my own captures (`verification/tmp/polish-waiting_room/i36/`, seeds 11/23/12 forced to kifs).
+
+Review words (looked at every frame):
+| frame | words |
+|---|---|
+| v5_s11 (mandelbox, neon) | violet, glowing, intricate — lower-left floor block a large dim violet area (dark but plain) |
+| v7.5_s11 | luminous, ornate, deep — violet-dominant, pink/cyan filigree visible but thin |
+| v9_s11 | luminous, jewelled, deep — bright pink glow on the block edge, bloom reads as light |
+| v9_s11_challenge | acid, cold, intricate — violet + acid-green filigree on dark, tighter |
+| v5_s23 (mandelbox, lunar) | sapphire, glowing, intricate |
+| v7.5_s23 | luminous, intricate, deep — engraved light-lines on lit blocks, black hall between |
+| v9_s23 | luminous, jewelled, alive — blocks ablaze with cyan filigree and bloom, dark recesses |
+| v9_s23_challenge | acid, harsh, deep — some mid-violet fill at the bottom-right (a little flat) |
+| kifs v5/v7.5 (neon, own captures) | jewelled, kaleidoscopic, dark — violet nave with pink/cyan jewels and lantern windows |
+| kifs v9 (lunar, seeds 23/12) | luminous, intricate, deep — beaded cyan filigree rings on a dark-blue lace, lit windows |
+Honest limits: the mandelbox views are blue- or violet-dominant per palette (the second light colour shows only on the filigree); the near floor block in the seed-11 view is a big dark area; challenge frames lean on violet.
+
+Measurements (linear luminance, PIL + numpy; satB = mean HSV S of the brighter half):
+| frame | p5 | median | p95 | mean | satB |
+|---|---|---|---|---|---|
+| v5_s11 | 0.006 | 0.025 | 0.156 | 0.045 | 0.70 |
+| v5_s23 | 0.008 | 0.047 | 0.237 | 0.071 | 0.83 |
+| **v7.5_s11** | 0.008 | 0.030 | 0.215 | 0.060 | 0.67 |
+| **v7.5_s23** | 0.010 | 0.062 | 0.349 | 0.101 | 0.77 |
+| v9_s11 | 0.009 | 0.034 | 0.279 | 0.075 | 0.64 |
+| v9_s23 | 0.011 | 0.075 | 0.448 | 0.127 | 0.72 |
+| v9_s11_challenge | 0.011 | 0.045 | 0.305 | 0.085 | 0.53 |
+| v9_s23_challenge | 0.011 | 0.037 | 0.253 | 0.074 | 0.56 |
+| kifs v7.5 s11 (own) | 0.007 | 0.031 | 0.180 | 0.052 | 0.63 |
+| kifs v9 s23 (own) | 0.010 | 0.032 | 0.190 | 0.053 | 0.70 |
+Targets at v 7.5: p5 ≤ 0.05 ✓, median 0.05–0.2 ✓ on s23 (0.062) / just below on s11 (0.030), p95 ≥ 0.3 ✓ on s23 (0.349) / below on s11 (0.215) and on kifs (0.18), satB ≥ 0.5 ✓ everywhere. Before (D-I9 frames): v7.5_s23 p5 0.035, median 0.055, p95 0.106, satB 0.55 (a 3:1 plateau).
+
+Limiter: guard never engaged in my monitored captures after the fixes (counted pattern fraction ≤ 0.19 over 6–10 s on all 6 base views + 4 kifs views; backstop 0 engagements).
+
+Worst case (`WORSTCASE_LAYERS=waiting_room WORSTCASE_SECONDS=20 WORSTCASE_SWEEP=0 E2E_BASE_URL=http://127.0.0.1:5177 … scripts/worstcase_flash.sh`, headed Chrome, real time): **PASS** — default seed 11 (mandelbox): general flashes max 0.5/s, red 0, **pattern frames 0** (max area 0.219), motion windows 0, max mean luminance 0.105, limiter engaged 0×. Also with `WORSTCASE_SEED=12` (kifs): PASS, pattern frames 0 (max area 0.188), mean ≤ 0.092. A 60-s run (seed 11) earlier in the session: PASS, pattern frames 0. (Before the kifs fixes, seed 12 failed with 5 pattern frames at area 0.281.)
+
+Frame cost (layer alone, 1920×1080, 30 renders per batch, gl readback to sync, RTX 4090 after the clock ramp-up): mandelbox v9 2.7–3.0 ms (challenge 2.7), mandelbox v7.5 2.7–2.9 ms, kifs v9 1.5–1.6 ms; first batches from idle clocks 6–7 ms. Gallery `render_stats`: frameMs 16.66 (vsync), renderScale 1 on every frame.
+
+Tests: `npx vitest run tests/hyperbolic.test.ts` 75 passed; `npx tsc --noEmit` clean.
+
+## Form constants polish, round 2 (polish-form_constants-r2, 2026-10-11)
+Gallery: `GALLERY_LAYERS=form_constants E2E_BASE_URL=http://127.0.0.1:5175 HYPERSPACE_SESSIONS_DIR=verification/tmp/polish-form_constants-r2/sessions scripts/gallery.sh` → 12/12 frames pass (blank, white, pattern, palette, stuck), capture exit 0, checks exit 0. Frame cost (sidecar renderStats): 16.66 ms at render scale 1.0 on every frame (vsync-bound). The 16 class frames `{tunnels_seed7,funnels_seed11,spirals_seed12,lattices_seed13}_v{3,5,7.5,9}.png` were re-rendered from the trip canvas (no DOM overlays) with the polished shader (they had been byte-identical to gallery_before_polish, and lattices_seed13_v9 had "[ESC] EXIT" burned in).
+
+Linear luminance per frame (p5 / median / p95 / max; mean HSV S of the brighter half):
+
+| frame | p5 | median | p95 | max | sat (bright half) | words |
+|---|---|---|---|---|---|---|
+| v5_s11 (neon, tunnel) | 0.021 | 0.035 | 0.078 | 0.60 | 0.86 | deep, vivid, smooth (outer bands plain) |
+| v5_s23 (lunar, lattice) | 0.026 | 0.039 | 0.083 | 0.58 | 0.86 | deep, jewelled, soft |
+| **v7.5_s11** | 0.025 | 0.040 | 0.088 | 0.81 | 0.88 | luminous core, deep, neon |
+| **v7.5_s23** | 0.028 | 0.042 | 0.109 | 0.74 | 0.87 | jewelled, deep, glowing |
+| v9_s11 | 0.028 | 0.045 | 0.103 | 0.96 | 0.89 | luminous, deep, vivid |
+| v9_s23 | 0.032 | 0.047 | 0.134 | 0.90 | 0.88 | jewelled, luminous core, deep (teal gaps a little flat) |
+| v9_s11_challenge | 0.024 | 0.043 | 0.107 | 0.96 | 0.90 | acidic, harsh, deep |
+| v9_s23_challenge | 0.025 | 0.046 | 0.147 | 1.00 | 0.92 | acidic, jewelled, tense |
+| classes v9 (tunnel / funnel / spiral / lattice) | 0.020–0.025 | 0.042–0.045 | 0.10–0.14 | 0.92–1.0 | 0.85–0.90 | white-hot core in violet tubes / starburst / vortex / lit honeycomb |
+
+Targets at v 7.5: p5 ≤ 0.05 ✓, median 0.05–0.2 ✗ (0.040–0.042, just below), p95 ≥ 0.3 ✗ (0.09–0.11), bright-half saturation ≥ 0.5 ✓ (0.87–0.88). Judge's targets: p05 0.01–0.03 ✓, median 0.06–0.10 ✗ (0.04–0.05), p95 ≥ 0.25 ✗, max ≈ 0.8 on filaments ✓ (0.74–1.0), bright-half saturation ≥ 0.6 ✓. p99 is 0.26–0.47: pixels at 0.25+ are confined to the bounded high-contrast core (NOTES D-P-form_constants-6/10: brighter annulus bodies force troughs ≥ 0.1 and a teal plateau; a larger core leaves flashcheck's central blocks). Progression v 5 → 7.5 → 9: the core grows (0.18 → 0.21) and goes from pink to white-hot (bodies 0.28 → 0.40, crests 0.50 → 0.85, bloom 0.25 → 0.55), the annulus bodies rise 0.085 → 0.11 with deeper chroma, more filigree and glints, faster drift; p99 0.30 → 0.39 → 0.47 (s11), max 0.60 → 0.81 → 0.96.
+
+SafetyLimiter (pre-limiter frames, my captures, 12–16 samples over 3–4 s each): guard fraction 0.02–0.155 (engages at 0.2; highest: funnels v9 0.144–0.155, spirals v9 0.142–0.145, tunnels 0.11–0.14, lattices 0.02–0.06), never engaged, backstop 0 engagements. flashcheck per frame: at most 4/32 high-contrast periodic blocks (the core), limit > 8.
+
+Worst case (`WORSTCASE_LAYERS=form_constants WORSTCASE_SECONDS=20 WORSTCASE_SWEEP=0 E2E_BASE_URL=http://127.0.0.1:5175 HYPERSPACE_SESSIONS_DIR=verification/tmp/polish-form_constants-r2/sessions scripts/worstcase_flash.sh`, v 9, difficult passage, sensitivity 2.0, real time): **PASS** — general flashes 0.0/s, red flashes 0.0/s, pattern frames 0 (max area 0.125, i.e. the four core blocks), motion windows 0, max mean luminance 0.067, limiter engaged 0×.
+
+Tests: `npx vitest run tests/neuralField.test.ts` 14 passed (2 new: window-pair luminance bound of the annulus plan, bounded core + intensity ramps); full `npx vitest run` 287 passed; `npx tsc --noEmit` clean.
+
+## Chrysanthemum polish r2 (polish-chrysanthemum-r2, 2026-10-11)
+
+Own stack: back end 8773 (`HYPERSPACE_SESSIONS_DIR=verification/tmp/polish-chrysanthemum-r2/sessions`, templates + procedural), Vite no-HMR 5176. Decisions: NOTES.md D-P-chrysanthemum-r2-1…9.
+
+Commands and results:
+- `cd frontend && npx tsc --noEmit`: clean. `npx vitest run tests/hyperbolic.test.ts`: 75 passed (+14 r2 cases in 6 blocks: vivid colours on all 5 palettes, hue family kept, hot magenta stays magenta / orange-red turns orange, accent colours, escalation, group zoom). Full `npx vitest run`: 287 passed (11 files).
+- `GALLERY_LAYERS=chrysanthemum E2E_BASE_URL=http://127.0.0.1:5176 HYPERSPACE_SESSIONS_DIR=verification/tmp/polish-chrysanthemum-r2/sessions scripts/gallery.sh`: **12/12 frames pass** (pattern scores 9.0–63.9; an earlier run failed v5_s11 pattern at 7.1 with unevenly spaced petals — fixed, D-r2-7).
+- `WORSTCASE_LAYERS=chrysanthemum WORSTCASE_SECONDS=20 WORSTCASE_SWEEP=0 E2E_BASE_URL=http://127.0.0.1:5176 HYPERSPACE_SESSIONS_DIR=verification/tmp/polish-chrysanthemum-r2/sessions scripts/worstcase_flash.sh`: **PASS** — 690 frames at 30 fps (23.0 s), limiter engaged 0×, general flashes max 1.0/s (tile area 0.5, whole frame 0.5, fine detail 1.0; limit 3), red 0, pattern frames 0 (max area 0.094, max periodic contrast 0.939), motion windows 0, max mean luminance 0.14.
+- Stale rejected frames: the eight `chrysanthemum_*_seed{11,22}*.png` (md5-identical to gallery_before_polish) removed from `verification/gallery/chrysanthemum/`.
+- Limiter guard (my probe `verification/tmp/polish-chrysanthemum-r2/quick.mjs`, every frame for 3 s after the 2 s settle, scrub mode): counted fraction max 0.08–0.185 across v5/7.5/9 × s11/s23 × challenge, 0 frames over 0.2 (engages at 0.2). Intermediate iterations that engaged it (0.20–0.23, visible grey blocks) were rejected: band ratio 2.7, fold shading 0.7, no rim sinking.
+- Frame cost: every gallery sidecar renderScale 1.0, frameMs 16.66–16.67 (vsync-bound); headless probe 17.4–19.8 ms with the nested tiling and the 3-sample lace density (no adaptive downscale).
+
+Measurements (final gallery PNGs, linear luminance; S = mean HSV saturation of the brighter half; `verification/tmp/polish-chrysanthemum-r2/measure2.py`):
+
+| frame | p5 | median | p95 | p99.9 | S bright half | frameMs / scale |
+|---|---|---|---|---|---|---|
+| v5_s11 | 0.007 | 0.041 | 0.327 | 0.74 | 0.67 | 16.67 / 1 |
+| v7.5_s11 | 0.008 | 0.070 | 0.365 | 0.78 | 0.63 | 16.67 / 1 |
+| v9_s11 | 0.008 | 0.079 | 0.393 | 0.80 | 0.60 | 16.67 / 1 |
+| v9_s11_challenge | 0.005 | 0.069 | 0.327 | 0.85 | 0.60 | 16.66 / 1 |
+| v5_s23 | 0.007 | 0.039 | 0.302 | 0.77 | 0.70 | 16.67 / 1 |
+| v7.5_s23 | 0.007 | 0.067 | 0.352 | 0.79 | 0.68 | 16.67 / 1 |
+| v9_s23 | 0.007 | 0.077 | 0.365 | 0.80 | 0.66 | 16.66 / 1 |
+| v9_s23_challenge | 0.005 | 0.061 | 0.335 | 0.84 | 0.67 | 16.67 / 1 |
+
+r1 (rejected): p95 0.128–0.231, p99.9 ~0.6–0.73, median 0.025–0.044. Targets on v7.5: p5 ≤ 0.05 met (0.007–0.008), median 0.05–0.2 met (0.067–0.070), p95 ≥ 0.3 met (0.352–0.365), S ≥ 0.5 met (0.63–0.68). v5 median 0.039–0.041 (lace still dim at v 5 by design). v1/v3 frames: p95 0.27–0.33, all pass.
+
+Review words (looked at every PNG):
+| frame | words | weak spot |
+|---|---|---|
+| v5_s11 | luminous, neon, jewelled | violet background inside the lace ring is a dark but flat violet; lace dim at v 5 (by design) |
+| v7.5_s11 | luminous, jewelled, kaleidoscopic | large-celled group: only ~2 rings of shrinkage visible; little composition change from v 5 |
+| v9_s11 | intricate, jewelled, luminous | escalation is the miniature rosettes in the cell cores + star seams + brighter crest: visible side by side with v 7.5, not dramatic |
+| v9_s11_challenge | cold, electric, veined | mid-ring cells soft (calm/dust zone under the faster flow); harsh violet/aqua, not a warm colour anywhere (as intended) |
+| v5_s23 | luminous, sapphire, jewelled | gold petals slightly ochre at the petal tips |
+| v7.5_s23 | luminous, sapphire, jewelled | as v 5 with brighter lace; big cells |
+| v9_s23 | jewelled, intricate, luminous | rosettes in the cell cores; the deepest view of the base frames |
+| v9_s23_challenge | jewelled, intricate, deep | the best frame: rings of heptagons shrinking toward the rim, aqua spiral lace on navy |
+Worst-case capture frames 201/351/501/621/681 (contact sheet `verification/tmp/polish-chrysanthemum-r2/worst_sheet.png`): (7,3,2) tilings, 4–5 rings of shrinking jewel cells in magenta, cyan, gold, green on violet — luminous, intricate, jewelled; one mid-melt frame reads as one tiling dissolving into the next.
+None of the frames is pale, washed, foggy, flat, pastel, muddy or grey in my judgement; the honest reservation is the s11/s23 base stills landing on large-celled groups (a seed/time accident of the scheduler, see NOTES D-r2 limits).
+
+## Room polish, round 2 (polish-room-r2, 2026-10-11)
+
+Gallery `GALLERY_LAYERS=room scripts/gallery.sh` against my stack (back end 8771, Vite no-HMR 5174): 16/16 frames pass `gallery_checks.py`; render stats renderScale 1.0, frameMs 16.66–17.07 (vsync). `npx vitest run tests/room.test.ts` 28/28, `npx tsc --noEmit` clean. Worst case `WORSTCASE_LAYERS=room WORSTCASE_SECONDS=20 WORSTCASE_SWEEP=0 scripts/worstcase_flash.sh`: PASS — 0 pattern frames (max pattern area 0.188, limit 0.25), general flashes ≤ 1.0/s (limit 3), red 0, limiter backstop engaged 0×, max mean luminance 0.133. Room layer GPU cost (1280×720, readPixels-synchronised loop): 1.52–1.67 ms eyes open, 2.16–2.43 ms eyes closed.
+
+Linear luminance / saturation (PIL + numpy; satBH = mean HSV S of the brighter half):
+
+| frame | p5 | median | p95 | satBH |
+|---|---|---|---|---|
+| room_v7.5_s11 | 0.008 | 0.048 | 0.473 | 0.82 |
+| room_v7.5_s23 | 0.010 | 0.056 | 0.457 | 0.84 |
+| room_v5_s11 / s23 | 0.009 / 0.011 | 0.052 / 0.059 | 0.452 / 0.450 | 0.78 / 0.87 |
+| room_v9_s11 / s23 | 0.010 / 0.012 | 0.059 / 0.060 | 0.477 / 0.461 | 0.77 / 0.80 |
+| room_v5_s11_eyes / s23_eyes | 0.014 / 0.014 | 0.032 / 0.030 | 0.305 / 0.277 (r1: 0.032) | 0.80 / 0.86 |
+| room_v3_s11_eyes / s23_eyes | 0.014 / 0.014 | 0.024 / 0.024 | 0.184 / 0.194 | 0.82 / 0.88 |
+| room_v9_s11_challenge / s23 | 0.006 / 0.006 | 0.008 / 0.009 | 0.328 / 0.279 (r1: 0.026 / 0.023) | 0.86 / 0.88 |
+
+Progression: mean |v9 − v7.5| (linear RGB) 0.047 (s11) / 0.037 (s23), r1 0.026 / 0.017; p95 0.473 → 0.477 and the stills differ in structure (central tunnel + folding annulus at v 9, a small emerging tunnel at v 7.5).
+SafetyLimiter guard (counted pattern ∧ high-contrast tiles, max over 4 s, engages > 0.2): eyes open v 5/7.5/9 ≤ 0.047/0.059/0.147 (s11), 0.040/0.044/0.100 (s23); eyes closed v 3/5 ≤ 0.060/0.082; challenge ≤ 0.098; photo v 3/5/7.5 ≤ 0.152/0.114/0.146. Never engaged.
+The neural-field overlay request (NOTES, polish-room-r2 integration note) was applied by its owner during this round (overlay off with the eyes closed, multiplicative): the eyes-closed/challenge frames above are without its grey veil.
+
+Review words (looked at every frame):
+
+| frame | words | note |
+|---|---|---|
+| room_v5_s11 | hot, saturated, glowing | magenta-violet walls, azure-cyan window, rosette patches with feathered cyan glow; right wall a little rust |
+| room_v7.5_s11 | hot, glowing, emerging | small cyan tunnel opening in the corner, crimson walls |
+| room_v9_s11 | folding, jewelled, deep | large tunnel with a kaleidoscopic annulus, twist, chromatic echoes |
+| room_v5_s23 | cool, jewelled, saturated | teal room, azure window (no lavender plateau), blue/hot-pink rosettes |
+| room_v7.5_s23 | electric, luminous, deep | blue room, small honeycomb tunnel |
+| room_v9_s23 | deep, jewelled, intricate | honeycomb tunnel and lattice annulus |
+| room_v5_s11_eyes | electric, neon, banded | magenta/cyan rings with glowing filaments in the blooms; bold bullseye rather than intricate |
+| room_v5_s23_eyes | luminous, jewelled, glowing | blue and fuchsia cells with lit rims on a deep ground |
+| room_v3_s11_eyes / s23_eyes | glowing, banded / luminous, jewelled | |
+| room_v9_s11_challenge | acid, harsh, angular | black ground, cyan/magenta shards lighting tight rings, chevrons |
+| room_v9_s23_challenge | acid, cellular, angular | magenta shards revealing cyan-rimmed cells |
+| room_default_v1 / v3 / v5 / eyes (seed 8, jewel) | calm room / vivid teal-fuchsia / hot, jewelled / luminous emerald-fuchsia cells | |
+| room_photo_v1 / v3 / v5 / v7 / eyes / look (seed 6, ember; sample photo) | the photo itself, no haze / molten gold / molten, saturated / glowing, deep, with an emerging tunnel / warm luminous cells / golden kaleidoscopic | no veil, no blotches; near-monochrome warm (ember palette) |
+| room_pano_v1 / v3 (seed 2, verdant) | calm / deep green, a little murky | the weakest frame |
+
+Not met / reservations: s11 eyes-closed is bold and banded more than intricate; s11 v 7.5 median 0.048 (target ≥ 0.05); pano v 3 murky green.
+
+## Waiting room polish, round 2 (polish-waiting_room-r2, 2026-10-11)
+
+Stack: back end 8774, Vite 5177 (`vite.nohmr.config.ts`), sessions `verification/tmp/polish-waiting_room-r2/sessions`. Files: `frontend/src/layers/waitingRoom.ts`, `frontend/src/layers/glsl/waitingRoom.frag.glsl`, `frontend/tests/hyperbolic.test.ts` (+4 waiting-room tests). Decisions D-P-waiting_room-r2-1…9 in NOTES.md.
+
+- Unit: `cd frontend && npx vitest run tests/hyperbolic.test.ts` **79 passed** (75 + 4 new: neon lights are #05d9e8 / #ff2a6d hues at full chroma, lunar block colours both cool, `capRedHue` keeps red share ≤ 0.74 by raising G/B, every palette's lights below the red rule). `npx tsc --noEmit` clean.
+- Gallery: `GALLERY_LAYERS=waiting_room E2E_BASE_URL=http://127.0.0.1:5177 HYPERSPACE_SESSIONS_DIR=verification/tmp/polish-waiting_room-r2/sessions scripts/gallery.sh` → **12/12 frames pass**, capture exit 0, checks exit 0.
+- Measurements (linear luminance; HSV S of the brighter half), gallery frames:
+
+| frame | p5 | median | p95 | sat (bright half) |
+|---|---|---|---|---|
+| v5_s11 (neon) | 0.005 | 0.033 | 0.253 | 0.66 |
+| v7.5_s11 | 0.005 | 0.044 | 0.356 | 0.58 |
+| v9_s11 | 0.006 | 0.052 | 0.437 | 0.54 |
+| v5_s23 (lunar) | 0.005 | 0.039 | 0.272 | 0.78 |
+| v7.5_s23 | 0.006 | 0.049 | 0.345 | 0.73 |
+| v9_s23 | 0.006 | 0.058 | 0.409 | 0.70 |
+| v9_s11_challenge | 0.002 | 0.013 | 0.127 | 0.57 |
+| v9_s23_challenge | 0.002 | 0.017 | 0.193 | 0.52 |
+
+  v7.5 targets: p5 ≤ 0.05 ✓, median 0.05–0.2 ✗ (0.044 / 0.049: the dark recesses and the corridor are most of the frame; just under), p95 ≥ 0.3 ✓, saturation ≥ 0.5 ✓. Judge's p95 targets (≈ 0.26 / 0.33 / 0.42): s11 0.253 / 0.356 / 0.437, s23 0.272 / 0.345 / 0.409. Mean screen luminance 0.03–0.11.
+- Review words (looked at every frame):
+  * `waiting_room_v5_s11.png`: **luminous, deep, jewelled** — hot-pink and cyan blocks ranked down a crossing of two halls, near-black recesses, glowing panels, violet depth glow in the centre. Calmer than v7.5 (fewer lit blocks, the second colour's lines at half strength).
+  * `waiting_room_v7.5_s11.png`: **luminous, jewelled, intricate** — more blocks ablaze, pink-on-cyan and cyan-on-pink line ornament on every face, white-hot crests.
+  * `waiting_room_v9_s11.png`: **luminous, intricate, alive** — the brightest; fine filigree on the near blocks. Weak spot: the near ceiling/floor corners carry broad pink and cyan glow smears (glowing, not muddy, but less crisp than the faces).
+  * `waiting_room_v5_s23.png`: **deep, luminous, cool** — cobalt and azure blocks with glowing panels on a navy base, blue depth glow down the halls. Close to monochrome blue by palette (lunar).
+  * `waiting_room_v7.5_s23.png`: **luminous, jewelled, deep** — the lunar gold appears as thin bright lines; more panels lit.
+  * `waiting_room_v9_s23.png`: **luminous, intricate, deep** — densest ornament; still a blue world.
+  * `waiting_room_v9_s11_challenge.png`: **dark, acidic, intricate** — cyan and pink lines on near-black faces (face L ≈ 0.01–0.03), no lilac fill. A few pale-pink clusters where pink and cyan lines overlap with bloom (small area).
+  * `waiting_room_v9_s23_challenge.png`: **dark, acidic, harsh** — the same acid pair on black for the lunar seed (it now turns colder/harsher, not lavender); no mint blob; some pale-pink clusters on the near ceiling.
+  * v1/v3 frames (`waiting_room_v1_s*.png`, `_v3_s*.png`, layer forced below its window; the shader clamps intensity below v 4): same look as v5 (looked at `v1_s23`: **deep, luminous, cool**).
+  * Re-rendered kind-forced frames (were byte-identical M6 originals): `waiting_room_mandelbox_v{7.5,9}_seed{11,22}.png` **luminous, jewelled, deep** (seed 22 is neon; p95 0.34–0.40); `waiting_room_mandelbox_v9_seed11_ch.png` **dark, acidic, intricate**; `waiting_room_kifs_v{7.5,9}_seed11.png` **dark, kaleidoscopic, jewelled-but-sparse** (p95 0.08 / 0.12); `waiting_room_kifs_v{7.5,9}_seed22.png` **dark, violet, flat** (p95 0.04–0.05) — kifs does **not** meet the bar yet (see D-P-waiting_room-r2-8). Neither gallery seed plans kifs.
+- Worst case: `WORSTCASE_LAYERS=waiting_room WORSTCASE_SECONDS=20 WORSTCASE_SWEEP=0 E2E_BASE_URL=http://127.0.0.1:5177 HYPERSPACE_SESSIONS_DIR=… scripts/worstcase_flash.sh` (seed 11, mandelbox, v 9, challenge + entity + message, sensitivity 2): **PASS** — 690 frames at 30 fps (27.6 achieved), general flashes max 1.0/s (limit 3), red 0, **pattern frames 0** (max area 0.156, i.e. 5 of 32 blocks; was 0.25 before D-P-waiting_room-r2-7c), motion windows 0, max mean luminance 0.116, limiter engaged 0×. Seed 12 (kifs, lunar): PASS, 0 flashes, pattern area max 0.031, mean luminance ≤ 0.031. Guard monitor in scrub on the final shader (6 s per view: s11 v9, s23 v9, s22 v7.5, s11 kifs v9, s11 v9 challenge): pattern guard never engaged, limiter never engaged, max counted `highContrastFraction` 0.135 (< 0.2).
+- Frame cost, 1920×1080, layer alone (ray march + bloom), 30 renders per rep, steady state after warm-up: mandelbox **2.6–2.8 ms** (v 5 / 9 / challenge), kifs **1.3–1.4 ms** (< 6 ms budget). Gallery sidecar `render_stats.frameMs` is 16.7 (vsync-bound, renderScale 1).
+
+## Form constants polish, round 3 (polish-form_constants-r3, 2026-10-11)
+Gallery `GALLERY_LAYERS=form_constants scripts/gallery.sh` against Vite 5175 / back end 8772: **12/12 frames pass** (blank, white, pattern 98–6154, palette, stuck). `FORM_CONSTANTS_GALLERY=1 npx playwright test neuralfield-spectrum`: 7/7 (v1 p2m 1.74; v6 stripes_x k 0.4418 vs 0.4418 predicted, p2m 6.3e5; v6 hexagons k 0.4476 vs 0.4418, three directions 60° apart). `npx vitest run`: 293/293 (neuralField 16/16). `npx tsc --noEmit`: clean. Worst case `WORSTCASE_LAYERS=form_constants WORSTCASE_SECONDS=20 WORSTCASE_SWEEP=0`: **PASS** twice (0 flashes, 0 red flashes, 0 pattern frames, max bad-block area 0.125, max mean luminance 0.087, limiter engaged 0×). Frame cost: 16.66–16.68 ms (vsync) at render scale 1.0 in every gallery sidecar.
+
+Measurements (linear luminance; satHi = mean HSV S of the brighter half; flashcheck pattern_blocks on the gallery PNG):
+
+| frame | p05 | median | p95 | > 0.25 | satHi |
+|---|---|---|---|---|---|
+| form_constants_v5_s11 | 0.031 | 0.045 | 0.121 | 3.5 % | 0.69 |
+| form_constants_v7.5_s11 | 0.035 | 0.049 | 0.164 | 4.2 % | 0.72 |
+| form_constants_v9_s11 | 0.038 | 0.054 | 0.270 | 5.1 % | 0.72 |
+| form_constants_v5_s23 | 0.035 | 0.047 | 0.106 | 2.4 % | 0.64 |
+| form_constants_v7.5_s23 | 0.036 | 0.049 | 0.151 | 4.0 % | 0.63 |
+| form_constants_v9_s23 | 0.039 | 0.053 | 0.220 | 4.8 % | 0.62 |
+| v9_s11_challenge / v9_s23_challenge | 0.023 / 0.026 | 0.036 / 0.039 | 0.086 / 0.090 | 2.2 / 3.1 % | 0.55 / 0.48 |
+| tunnels_seed7 v5 / 7.5 / 9 | 0.033 / 0.036 / 0.036 | 0.046 / 0.051 / 0.051 | 0.135 / 0.250 / 0.356 | 3.9 / 5.0 / 5.8 % | 0.62–0.66 |
+| funnels_seed11 v5 / 7.5 / 9 | 0.032 / 0.035 / 0.035 | 0.046 / 0.050 / 0.051 | 0.124 / 0.221 / 0.286 | 3.9 / 4.8 / 5.3 % | 0.68–0.72 |
+| spirals_seed12 v5 / 7.5 / 9 | 0.029 / 0.034 / 0.035 | 0.045 / 0.051 / 0.054 | 0.129 / 0.231 / 0.312 | 3.9 / 4.8 / 5.5 % | 0.62–0.65 |
+| lattices_seed13 v5 / 7.5 / 9 | 0.032 / 0.035 / 0.036 | 0.046 / 0.051 / 0.052 | 0.105 / 0.153 / 0.211 | 2.4 / 4.2 / 4.8 % | 0.71–0.74 |
+
+(r2 for comparison: p95 0.074–0.147, 1–4 % above 0.25.) Repeated captures of the same v 7.5 frame vary: s11 v 7.5 p95 0.164–0.262 between captures (the core's lit area moves with the drift). Limiter guard `highContrastFraction` (max of 40 samples over 10 s): 0.145–0.166 at v 9, ≤ 0.152 at v 7.5, never engaged.
+
+Review words (looked at every frame listed; class frames also on 2×2 contact sheets):
+
+| frame | words | note |
+|---|---|---|
+| form_constants_v5_s11 | glowing core, violet, soft | blue neon ring around a lilac/pink core; periphery dark violet with pink/violet neon centre-lines, few sparks |
+| form_constants_v7.5_s11 | luminous core, layered, violet | electric-blue and teal rings near the core, engraved contour lines on the outer tubes |
+| form_constants_v9_s11 | incandescent core, layered, violet | white-hot core rings, gold sparks, wider neon lines; periphery still a violet field |
+| form_constants_v5_s23 | honeycomb, violet, flat-ish | packed cells with dark centres and blue rims, gold-rimmed core cells |
+| form_constants_v7.5_s23 | honeycomb, glowing core, violet | white core honeycomb with bloom |
+| form_constants_v9_s23 | honeycomb, incandescent, violet | |
+| form_constants_v9_s11_challenge | harsh, acid, banded | black core with lime/pink crest rings, lime spark dashes; periphery magenta + green lines on navy/wine (still some broad flank colour) |
+| form_constants_v9_s23_challenge | cold, sparse, acid | slate cells, dark phosphor-green walls, lime core honeycomb |
+| tunnels_seed7 v5/7.5/9 | glowing, blue-violet, monochrome | lunar palette: near-monochrome; spark dashes on the core rim at 7.5/9 |
+| funnels_seed11 v5/7.5/9 | radiant, pink-blue, starburst | white starburst core, pink/blue neon spokes; the most colourful periphery |
+| spirals_seed12 v5/7.5/9 | turning, blue-violet, soft | |
+| lattices_seed13 v5/7.5/9 | honeycomb, magenta-violet, glowing | crimson rims, dark cell centres, pink/white core cells |
+
+Not met / reservations (see NOTES D-P-form_constants-11, Limits): the periphery cannot carry 0.6–0.8 crest lines (guard 0.29–0.88 in every variant tried), so outside the core it reads as a dark violet/blue world with neon lines, not black with incandescent lines — "violet" and "soft" remain honest words there; p95 ≥ 0.25 at v 9 (and some v 7.5 frames), not at v 5; lunar-palette frames are near-monochrome; challenge periphery still shows broad magenta/navy flank colour; median 0.045–0.049 at v ≤ 7.5 (target ≥ 0.05).
+
+## Waiting room polish r3 (polish-waiting_room-r3, 2026-10-11)
+
+Linear luminance (sRGB-decoded, Rec.709) of the final gallery PNGs; satB = mean HSV S of the brighter half.
+
+| frame | p5 | median | p95 | satB | words |
+|---|---|---|---|---|---|
+| kifs v5 seed11 | 0.003 | 0.009 | 0.050 | 0.80 | dark, ornate, plum (dimmest frame; magenta/sapphire slabs) |
+| kifs v7.5 seed11 | 0.003 | 0.013 | 0.131 | 0.69 | neon lantern-ring, jewelled, dark |
+| kifs v9 seed11 | 0.003 | 0.020 | 0.276 | 0.58 | luminous, ornate, neon (pink + cyan rings, no pale rope) |
+| kifs v5 seed22 | 0.002 | 0.008 | 0.132 | 0.75 | kaleidoscopic, neon, dark |
+| kifs v7.5 seed22 | 0.002 | 0.014 | 0.300 | 0.59 | luminous, kaleidoscopic, jewelled |
+| kifs v9 seed22 | 0.002 | 0.021 | 0.369 | 0.55 | blazing, intricate, deep |
+| v9 s11 challenge | 0.003 | 0.020 | 0.273 | 0.50 | acid, intricate, dark (cyan crosses, crimson lace, black corners) |
+| v9 s23 challenge | 0.003 | 0.032 | 0.378 | 0.46 | electric, dense, a little hazy where the lace crowds |
+| mandelbox v9 seed11 ch | 0.002 | 0.020 | 0.278 | 0.50 | acid, angular, intricate |
+| v5 / v7.5 / v9 s11 | 0.005 | 0.033 / 0.043 / 0.052 | 0.254 / 0.348 / 0.434 | 0.66 / 0.58 / 0.54 | (unchanged from r2) luminous, jewelled, deep |
+| v5 / v7.5 / v9 s23 | 0.005–0.006 | 0.039 / 0.049 / 0.058 | 0.271 / 0.346 / 0.411 | 0.77 / 0.73 / 0.70 | sapphire, gilded threads (sparse), intricate |
+
+Before (r2): kifs p95 0.036–0.122 (seed22 0.043/0.049), challenge p95 0.127/0.129/0.193.
+Gallery checks 12/12 pass. Guard (`highContrastFraction`, 10-s monitor): kifs seeds 11/22 v 5/9 max 0.098–0.11, guard never engaged (before the peripheral-thread fade: 0.18–0.27, engaged). Worst case (20 s, no sweep): seed 11 (mandelbox) PASS, 0 pattern frames, max area 0.156, flashes 0.5/s, max mean 0.117; seed 12 (kifs) PASS, 0 pattern frames, max area 0.188, flashes 0.5/s, max mean 0.123; limiter engaged 0×. Layer cost at 1920×1080 (shoot.mjs PERF, 30-frame batches, steady state): kifs v9 1.4–1.5 ms, mandelbox v9 2.5 ms, mandelbox challenge 2.6 ms (first batches 4–7 ms while clocks ramp); gallery render_stats frameMs 16.7 (vsync).

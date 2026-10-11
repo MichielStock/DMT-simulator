@@ -7,7 +7,7 @@ import {
   criticalGain, criticalIntensity, gainRatio, makeKernel, powerSpectrum2D, predictWavenumber, radialSpectrum,
   regimeAt, wavelengthCells,
 } from '../src/layers/neuralFieldCpu';
-import { RENDER_LIMITS } from '../src/layers/neuralField';
+import { RENDER_LIMITS, annulusPlan } from '../src/layers/neuralField';
 
 const LAMBDA = 12;
 const T = 180_000;
@@ -113,5 +113,79 @@ describe('safety at source', () => {
     expect(RENDER_LIMITS.michelson).toBeLessThanOrEqual(0.45);
     expect(RENDER_LIMITS.driftHzMax).toBeLessThanOrEqual(0.5);
     for (const u of [-50, -1, 0, 1, 50]) { expect(activity(u)).toBeGreaterThanOrEqual(0); expect(activity(u)).toBeLessThanOrEqual(1); }
+  });
+});
+
+describe('safety at source: dark-base luminance window (polish, D-P-form_constants-1)', () => {
+  it('troughs sit on a dark base and the broad periodic structure keeps Lmax <= 2.35 Lmin at every intensity', () => {
+    expect(RENDER_LIMITS.lMin).toBeLessThanOrEqual(0.05);
+    expect(RENDER_LIMITS.lMin).toBeGreaterThanOrEqual(0.02);
+    expect(RENDER_LIMITS.ratioLow).toBeLessThan(RENDER_LIMITS.ratioMax);
+    expect(RENDER_LIMITS.ratioMax).toBeLessThanOrEqual(2.35);
+    expect(RENDER_LIMITS.lMax / RENDER_LIMITS.lMin).toBeCloseTo(RENDER_LIMITS.ratioMax, 6);
+    // Michelson of the broad pattern stays below the limiter guard's 0.45 tile test (and §4.1's 0.5)
+    expect(RENDER_LIMITS.michelson).toBeLessThanOrEqual(0.41);
+  });
+});
+
+describe('safety at source: core + lit annulus plan (polish round 2, D-P-form_constants-6)', () => {
+  it('outside the core, any two points within a window keep brightest body / darkest trough <= winC (Michelson < 0.45)', () => {
+    let rnd = 12345;
+    const rand = () => { rnd = (rnd * 1103515245 + 12345) & 0x7fffffff; return rnd / 0x7fffffff; };
+    let worst = 0;
+    for (const b0 of RENDER_LIMITS.b0) {
+      for (let i = 0; i < 4000; i++) {
+        const light = rand() * 2 * Math.PI;
+        // q anywhere on a 16:9 screen (and beyond, for mouse look) outside the core
+        const x = (rand() * 2 - 1) * 1.1, y = (rand() * 2 - 1) * 0.75;
+        if (Math.hypot(x, y) < 0.235) continue;
+        const an = rand() * 2 * Math.PI, d = rand() * RENDER_LIMITS.win;
+        const x2 = x + d * Math.cos(an), y2 = y + d * Math.sin(an);
+        if (Math.hypot(x2, y2) < 0.235) continue;
+        const a = annulusPlan(x, y, b0, light), b = annulusPlan(x2, y2, b0, light);
+        worst = Math.max(worst, b.body / a.trough, a.body / b.trough);
+        expect(a.trough).toBeGreaterThanOrEqual(RENDER_LIMITS.lMin - 1e-9);
+        expect(a.body / a.trough).toBeLessThanOrEqual(RENDER_LIMITS.ratioMax + 1e-9);
+      }
+    }
+    // exact bound (the shader uses an analytic upper bound of the envelope over the window)
+    expect(worst).toBeLessThanOrEqual(RENDER_LIMITS.winC + 1e-9);
+    expect((RENDER_LIMITS.winC - 1) / (RENDER_LIMITS.winC + 1)).toBeLessThan(0.45);
+  });
+
+  it('the high-contrast core is bounded and intensity drives the rendering (crest, bloom, bodies rise with v)', () => {
+    expect(RENDER_LIMITS.coreAreaMax).toBeLessThan(0.09);
+    expect(RENDER_LIMITS.coreROut[1]).toBeLessThanOrEqual(0.21);
+    expect(RENDER_LIMITS.coreTrough).toBeLessThanOrEqual(0.02);
+    for (const k of ['b0', 'coreBody', 'crestL', 'bloomA', 'bloomB'] as const) {
+      const r = RENDER_LIMITS[k] as readonly [number, number];
+      expect(r[1]).toBeGreaterThan(r[0]);
+    }
+    expect(RENDER_LIMITS.crestL[1]).toBeLessThanOrEqual(0.9);
+    expect(RENDER_LIMITS.coreBody[1]).toBeLessThanOrEqual(0.45);
+  });
+});
+
+describe('safety at source + intensity (polish round 3, D-P-form_constants-11..14)', () => {
+  it('the annulus keeps its whole periodic structure inside the window; only the bounded core exceeds it', () => {
+    // nebula dust lifts the troughs by at most dustMax (the shader also clamps it to the local Ro)
+    expect(RENDER_LIMITS.dustMax).toBeGreaterThanOrEqual(1);
+    expect(RENDER_LIMITS.dustMax).toBeLessThanOrEqual(RENDER_LIMITS.ratioMax);
+    // the fully-lit core stays inside the bounded core
+    expect(RENDER_LIMITS.coreRIn[1]).toBeLessThan(RENDER_LIMITS.coreROut[1]);
+    expect(RENDER_LIMITS.coreAreaMax).toBeLessThan(0.09);
+    // annulus centre-lines stay a dark-base pattern: trough = centre-line / ratio <= 0.055 at v 9
+    expect(RENDER_LIMITS.b0[1] / RENDER_LIMITS.ratioMax).toBeLessThanOrEqual(0.055);
+  });
+
+  it('intensity drives the rendering over the whole field (lines, filaments, sparks, mid-ground)', () => {
+    for (const k of ['crestW', 'glintL', 'filig', 'mid', 'coreRIn', 'b0'] as const) {
+      const r = RENDER_LIMITS[k] as readonly [number, number];
+      expect(r[1]).toBeGreaterThan(r[0]);
+    }
+    // a lower noise threshold = more sparks at higher intensity
+    expect(RENDER_LIMITS.glintTh[1]).toBeLessThan(RENDER_LIMITS.glintTh[0]);
+    // sparks are accents, never a full-white field
+    expect(RENDER_LIMITS.glintL[1]).toBeLessThanOrEqual(0.9);
   });
 });

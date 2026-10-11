@@ -4,7 +4,7 @@
       "/home/mstock/.local/opt/node/bin/node",
       "/home/mstock/Code/hyperspace/frontend/node_modules/.bin/playwright",
       "test",
-      "--list"
+      "safety-limiter"
     ],
     "configFile": "/home/mstock/Code/hyperspace/frontend/playwright.config.ts",
     "rootDir": "/home/mstock/Code/hyperspace/tests/e2e",
@@ -17,14 +17,18 @@
     "grep": {},
     "grepInvert": null,
     "maxFailures": 0,
-    "metadata": {},
+    "metadata": {
+      "actualWorkers": 1
+    },
     "preserveOutput": "always",
     "projects": [
       {
         "outputDir": "/home/mstock/Code/hyperspace/frontend/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {},
+        "metadata": {
+          "actualWorkers": 1
+        },
         "id": "",
         "name": "",
         "testDir": "/home/mstock/Code/hyperspace/tests/e2e",
@@ -42,7 +46,9 @@
         "outputDir": "/home/mstock/Code/hyperspace/frontend/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {},
+        "metadata": {
+          "actualWorkers": 1
+        },
         "name": "",
         "testDir": "/home/mstock/Code/hyperspace/tests/e2e",
         "snapshotDir": "/home/mstock/Code/hyperspace/tests/e2e",
@@ -50,7 +56,7 @@
         "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
         "timeout": 900000,
         "use": {
-          "baseURL": "http://127.0.0.1:8765",
+          "baseURL": "http://127.0.0.1:5178",
           "headless": true,
           "viewport": {
             "width": 1280,
@@ -95,332 +101,210 @@
     "updateSourceMethod": "patch",
     "version": "1.64.0",
     "workers": 1,
-    "webServer": {
-      "command": "cd .. && ./run.sh --serve-only",
-      "url": "http://127.0.0.1:8765/api/status",
-      "reuseExistingServer": true,
-      "timeout": 600000,
-      "stdout": "pipe",
-      "stderr": "pipe"
-    }
+    "webServer": null
   },
   "suites": [
     {
-      "title": "screens.spec.ts",
-      "file": "screens.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "screens at 1920x1080",
-          "file": "screens.spec.ts",
-          "line": 36,
-          "column": 8,
-          "specs": [
-            {
-              "title": "title",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 900000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "2676ef668c5398eed988-31ce9529620db6dcb1ba",
-              "file": "screens.spec.ts",
-              "line": 39,
-              "column": 9
-            },
-            {
-              "title": "safety",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 900000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "2676ef668c5398eed988-874c7d601e117d1ba90b",
-              "file": "screens.spec.ts",
-              "line": 47,
-              "column": 9
-            },
-            {
-              "title": "intake",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 900000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "2676ef668c5398eed988-4148e4dbace9a20365fe",
-              "file": "screens.spec.ts",
-              "line": 54,
-              "column": 9
-            },
-            {
-              "title": "end screen",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 900000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "2676ef668c5398eed988-d0840c7bccdd82faeab1",
-              "file": "screens.spec.ts",
-              "line": 64,
-              "column": 9
-            }
-          ]
-        },
-        {
-          "title": "screens at 3840x2160",
-          "file": "screens.spec.ts",
-          "line": 36,
-          "column": 8,
-          "specs": [
-            {
-              "title": "title",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 900000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "2676ef668c5398eed988-18e5970af374259d4c1b",
-              "file": "screens.spec.ts",
-              "line": 39,
-              "column": 9
-            },
-            {
-              "title": "safety",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 900000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "2676ef668c5398eed988-8c65bfdff1d384bf713e",
-              "file": "screens.spec.ts",
-              "line": 47,
-              "column": 9
-            },
-            {
-              "title": "intake",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 900000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "2676ef668c5398eed988-bdc023b6878c20d765eb",
-              "file": "screens.spec.ts",
-              "line": 54,
-              "column": 9
-            },
-            {
-              "title": "end screen",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 900000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "2676ef668c5398eed988-238cbf9ca77ce5e76923",
-              "file": "screens.spec.ts",
-              "line": 64,
-              "column": 9
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "title": "session.spec.ts",
-      "file": "session.spec.ts",
+      "title": "safety-limiter.spec.ts",
+      "file": "safety-limiter.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [
         {
-          "title": "full session at threshold (timewarp 10)",
+          "title": "SafetyLimiter: bw10 captured at real time passes flashcheck",
           "ok": true,
           "tags": [],
           "tests": [
             {
-              "timeout": 900000,
-              "annotations": [
-                {
-                  "type": "serial",
-                  "location": {
-                    "file": "/home/mstock/Code/hyperspace/tests/e2e/session.spec.ts",
-                    "line": 0,
-                    "column": 0
-                  }
-                }
-              ],
+              "timeout": 180000,
+              "annotations": [],
               "expectedStatus": "passed",
               "projectId": "",
               "projectName": "",
-              "results": [],
-              "status": "skipped"
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7305,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "flashcheck: /home/mstock/Code/hyperspace/verification/captures/safety-bw10\n  frames 150 at 30 fps (5.0 s), capture achieved 55.8 fps\n  general flashes: max 1.5/s in any 1 s window (tile area 1.5, whole frame 1.5, fine detail 1.5; limit 3)\n  red flashes:     max 0.0/s (limit 3)\n  pattern frames:  0 (max area 0.0, max periodic contrast 0.0); motion windows 0\n  max mean luminance 0.791\n  RESULT: PASS\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T22:40:43.946Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
             }
           ],
-          "id": "6fa1842ca325e3ffbb00-2fa0d60a877062fe583e",
-          "file": "session.spec.ts",
-          "line": 14,
+          "id": "5c08bb829cdcd6c01c15-ff6ac2300762e46b949c",
+          "file": "safety-limiter.spec.ts",
+          "line": 44,
           "column": 7
         },
         {
-          "title": "full session at light (timewarp 10)",
+          "title": "SafetyLimiter: red8 captured at real time passes flashcheck",
           "ok": true,
           "tags": [],
           "tests": [
             {
-              "timeout": 900000,
-              "annotations": [
-                {
-                  "type": "serial",
-                  "location": {
-                    "file": "/home/mstock/Code/hyperspace/tests/e2e/session.spec.ts",
-                    "line": 0,
-                    "column": 0
-                  }
-                }
-              ],
+              "timeout": 180000,
+              "annotations": [],
               "expectedStatus": "passed",
               "projectId": "",
               "projectName": "",
-              "results": [],
-              "status": "skipped"
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7208,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "flashcheck: /home/mstock/Code/hyperspace/verification/captures/safety-red8\n  frames 150 at 30 fps (5.0 s), capture achieved 56.6 fps\n  general flashes: max 1.0/s in any 1 s window (tile area 1.0, whole frame 1.0, fine detail 1.0; limit 3)\n  red flashes:     max 1.5/s (limit 3)\n  pattern frames:  0 (max area 0.0, max periodic contrast 0.0); motion windows 0\n  max mean luminance 0.213\n  RESULT: PASS\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T22:40:51.392Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
             }
           ],
-          "id": "6fa1842ca325e3ffbb00-14f95b8c1f6d01889605",
-          "file": "session.spec.ts",
-          "line": 14,
+          "id": "5c08bb829cdcd6c01c15-e2c5c7b222dd21c745fd",
+          "file": "safety-limiter.spec.ts",
+          "line": 44,
           "column": 7
         },
         {
-          "title": "full session at strong (timewarp 10)",
+          "title": "SafetyLimiter: stripes captured at real time passes flashcheck",
           "ok": true,
           "tags": [],
           "tests": [
             {
-              "timeout": 900000,
-              "annotations": [
-                {
-                  "type": "serial",
-                  "location": {
-                    "file": "/home/mstock/Code/hyperspace/tests/e2e/session.spec.ts",
-                    "line": 0,
-                    "column": 0
-                  }
-                }
-              ],
+              "timeout": 180000,
+              "annotations": [],
               "expectedStatus": "passed",
               "projectId": "",
               "projectName": "",
-              "results": [],
-              "status": "skipped"
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7590,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "flashcheck: /home/mstock/Code/hyperspace/verification/captures/safety-stripes\n  frames 150 at 30 fps (5.0 s), capture achieved 59 fps\n  general flashes: max 2.0/s in any 1 s window (tile area 2.0, whole frame 0.5, fine detail 2.0; limit 3)\n  red flashes:     max 0.0/s (limit 3)\n  pattern frames:  0 (max area 0.0, max periodic contrast 0.421); motion windows 0\n  max mean luminance 0.504\n  RESULT: PASS\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T22:40:58.608Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
             }
           ],
-          "id": "6fa1842ca325e3ffbb00-4905d39f185bdfc32bbd",
-          "file": "session.spec.ts",
-          "line": 14,
+          "id": "5c08bb829cdcd6c01c15-6cf1ebdeabd763f8487b",
+          "file": "safety-limiter.spec.ts",
+          "line": 44,
           "column": 7
         },
         {
-          "title": "full session at breakthrough (timewarp 10)",
+          "title": "SafetyLimiter: bw10-debug captured at real time passes flashcheck",
           "ok": true,
           "tags": [],
           "tests": [
             {
-              "timeout": 900000,
-              "annotations": [
-                {
-                  "type": "serial",
-                  "location": {
-                    "file": "/home/mstock/Code/hyperspace/tests/e2e/session.spec.ts",
-                    "line": 0,
-                    "column": 0
-                  }
-                }
-              ],
+              "timeout": 180000,
+              "annotations": [],
               "expectedStatus": "passed",
               "projectId": "",
               "projectName": "",
-              "results": [],
-              "status": "skipped"
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7238,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "flashcheck: /home/mstock/Code/hyperspace/verification/captures/safety-bw10-debug\n  frames 150 at 30 fps (5.0 s), capture achieved 59.2 fps\n  general flashes: max 1.5/s in any 1 s window (tile area 1.5, whole frame 1.5, fine detail 1.5; limit 3)\n  red flashes:     max 0.0/s (limit 3)\n  pattern frames:  0 (max area 0.0, max periodic contrast 0.0); motion windows 0\n  max mean luminance 0.791\n  RESULT: PASS\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T22:41:06.206Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
             }
           ],
-          "id": "6fa1842ca325e3ffbb00-7b9b547d45f0c0e99c1d",
-          "file": "session.spec.ts",
-          "line": 14,
+          "id": "5c08bb829cdcd6c01c15-41291b30a9e974822711",
+          "file": "safety-limiter.spec.ts",
+          "line": 44,
           "column": 7
+        },
+        {
+          "title": "SafetyLimiter: static control does not engage and passes flashcheck",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5594,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-10T22:41:13.450Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5c08bb829cdcd6c01c15-a445c6342559b2cef30a",
+          "file": "safety-limiter.spec.ts",
+          "line": 77,
+          "column": 5
         }
       ]
     }
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-10T16:28:42.576Z",
-    "duration": 94.94900000000001,
-    "expected": 0,
-    "skipped": 12,
+    "startTime": "2026-10-10T22:40:43.722Z",
+    "duration": 35399.317,
+    "expected": 5,
+    "skipped": 0,
     "unexpected": 0,
     "flaky": 0
   }

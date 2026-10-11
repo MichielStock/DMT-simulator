@@ -18,3 +18,4 @@ assets/sample/*.jpg
 /node_modules
 
 verification/tmp/
+verification/gallery_before_polish/

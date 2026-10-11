@@ -104,7 +104,7 @@
       "maxRiseDb200ms": 0
     }
   },
-  "renderMs": 4030,
+  "renderMs": 3906,
   "sampleRate": 48000,
   "frameDt": 0.016,
   "wavs": [

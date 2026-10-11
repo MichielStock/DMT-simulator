@@ -178,6 +178,17 @@ export const ROOM_FREQS = Object.freeze({
   challengeBoost: 1.6,    // multiplier during a difficult passage (all of the above stay <= 0.5 Hz)
 });
 
+/** Radial tunnel flow of the eyes-closed field: rate of the cortical-x offset (texture units per second).
+ *  The field's wavelength is ≥ FIELD_MIN_PERIOD_X texture units (makeKernel clamps λ ≥ 0.75 · LAMBDA_MIN
+ *  = 6 cells of 256; typical λ 12), so the temporal frequency at a point is ≤ rate / FIELD_MIN_PERIOD_X:
+ *  ≤ 0.11 Hz calm (typ. 0.05), ≤ 0.66 Hz in a difficult passage (typ. 0.33: "faster within the limits",
+ *  docs/VISUAL_DIRECTION.md; BUILD.md 4.1 allows 2 Hz). */
+export const FIELD_MIN_PERIOD_X = 6 / 256;
+export const PHOSPHENE_ZOOM = Object.freeze({ calm: 0.0025, challenge: 0.0155 });
+export function phospheneZoomRate(challenge: number): number {
+  return PHOSPHENE_ZOOM.calm + (PHOSPHENE_ZOOM.challenge - PHOSPHENE_ZOOM.calm) * clamp01(challenge);
+}
+
 /** Drift: advected texture-coordinate offsets relax back to zero with this time constant (s); the flow
  *  speed at full drift is DRIFT_SPEED image heights per second, so offsets stay below ~SPEED x TAU. */
 export const DRIFT_TAU_S = 5;
@@ -195,8 +206,15 @@ export interface RoomFx {
   sat: number;       // saturation multiplier (1 = unchanged)
   hue: number;       // max hue rotation (radians)
   tracer: number;    // 0–1 tracer strength when the camera moves
-  palette: number;   // 0–1 tint toward the trip palette
+  palette: number;   // 0–1 jewel mapping: luminance-preserving gradient map onto the trip palette's stops
   speed: number;     // time-scale of all modulations (≤ ROOM_FREQS.challengeBoost)
+  deep: number;      // 0–1 tone deepening: dark base, luminous highlights (docs/VISUAL_DIRECTION.md §1)
+  shoulder: number;  // 0–1 highlight shoulder (the bright window is rolled off, never blown out)
+  fringe: number;    // 0–1 chromatic fringes on edges (R/B sampled radially apart, up to ~4 px)
+  glow: number;      // 0–1 luminous edge auras (thin, aperiodic room edges in the palette accent colour)
+  bloom: number;     // 0–1 bloom of the glowing edges (final pass)
+  fold: number;      // 0–1 the room itself folds (v 6.5 → 9.5): stronger warp, triple fringes, the central
+                     // tunnel, denser and finer repetition toward the centre
 }
 
 export function smoothstep(e0: number, e1: number, x: number): number {
@@ -210,6 +228,7 @@ export function roomEffects(v: number, distortion: number, challenge = 0): RoomF
   const d = clamp01(distortion);
   const c = clamp01(challenge);
   const hi = smoothstep(2, 7, v);
+  const mid = smoothstep(1, 3.2, v);   // "by v = 3 vivid colour" (docs/VISUAL_DIRECTION.md §3)
   const fxv = d * (0.45 + 0.55 * hi);
   return {
     breathe: clamp01(d * (0.55 + 0.45 * hi) * (1 + 0.3 * c)),
@@ -217,11 +236,19 @@ export function roomEffects(v: number, distortion: number, challenge = 0): RoomF
     warp: clamp01(d * (0.4 + 0.6 * hi)),
     tile: clamp01(d * smoothstep(1.2, 3.8, v)),
     tileScale: (0.12 - 0.045 * hi) * (1 - 0.2 * c),
-    sat: 1 + 0.25 * d + 0.7 * hi - 0.35 * c,
+    // v = 1 (d ≈ 0.26): +10 % saturation ("the room is itself, slightly richer"); vivid by v 3, jewelled by 5.
+    // A difficult passage changes the palette (acid complementaries), never desaturates.
+    sat: 1 + 0.38 * d + 0.5 * d * mid + 0.9 * hi,
     hue: 0.06 * d + 0.4 * hi,
     tracer: d * (0.3 + 0.4 * hi),
-    palette: clamp01(0.1 * d + 0.14 * hi),   // vivid by v 3 (docs/VISUAL_DIRECTION.md)
+    palette: clamp01(d * (0.3 * mid + 0.62 * hi) + 0.25 * c),
     speed: 1 + (ROOM_FREQS.challengeBoost - 1) * c,
+    deep: clamp01(0.12 * d + d * (0.45 * mid + 0.43 * hi) + 0.15 * c),
+    shoulder: clamp01(0.35 * d + 0.65 * d * mid),
+    fringe: clamp01(d * (0.08 + 0.4 * mid + 0.52 * hi)),
+    glow: clamp01(d * (0.3 * mid + 0.7 * hi)),
+    bloom: clamp01(d * (0.35 * mid + 0.65 * hi)),
+    fold: clamp01(d * smoothstep(6.5, 9.5, v)),
   };
 }
 
@@ -255,3 +282,95 @@ export function vividColours(hexes: readonly string[] | null | undefined, n = 3)
   while (out.length < n) out.push(fallback[out.length % fallback.length]);
   return out;
 }
+
+/** Linear luminance of a linear RGB triple. */
+export function lumOf(c: readonly number[]): number {
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+
+/** Jewel stops for the room's gradient map: the trip palette's chromatic colours (chroma ≥ 0.45 of their
+ *  maximum channel, luminance ≥ 0.012: the near-black background and near-white/pastel colours are
+ *  skipped), the n most chromatic, sorted by luminance (dark → bright). The shader maps the room's own
+ *  luminance onto these stops and rescales each stop to the pixel's luminance, so the structure of the
+ *  room is kept and only its colour becomes the palette's (hue contrast, not luminance contrast). */
+export function jewelStops(hexes: readonly string[] | null | undefined, n = 4): [number, number, number][] {
+  const chroma = (c: readonly number[]) => (Math.max(...c) - Math.min(...c)) / Math.max(1e-4, Math.max(...c));
+  const cols = (hexes ?? []).map(hexToLinear).filter((c) => lumOf(c) >= 0.012 && chroma(c) >= 0.6);
+  const fallback = ['#3a5bd9', '#c2187a', '#1f8f7a', '#e8a33b'].map(hexToLinear);
+  const picked = cols.map((c, i) => ({ c, s: chroma(c), i })).sort((a, b) => b.s - a.s || a.i - b.i).slice(0, n).map((x) => x.c);
+  for (const f of fallback) { if (picked.length >= Math.min(n, 2)) break; picked.push(f); }
+  picked.sort((a, b) => lumOf(a) - lumOf(b));
+  while (picked.length < n) picked.push(picked[picked.length - 1]);
+  // broad areas take these colours: keep saturated red below the red-flash share (BUILD.md 4.1;
+  // docs/VISUAL_DIRECTION.md §2: crimson with a touch of blue rather than pure red)
+  return picked.map((c) => limitRedShare(c));
+}
+
+const toYiq = (c: readonly number[]) => [
+  0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2],
+  0.596 * c[0] - 0.274 * c[1] - 0.322 * c[2],
+  0.211 * c[0] - 0.523 * c[1] + 0.312 * c[2],
+];
+const fromYiq = (y: number, i: number, q: number): [number, number, number] => [
+  Math.max(0, y + 0.956 * i + 0.621 * q), Math.max(0, y - 0.272 * i - 0.647 * q), Math.max(0, y - 1.106 * i + 1.703 * q),
+];
+/** YIQ hue angle (rad): yellow ≈ -0.77, orange ≈ -0.1, olive ≈ -1.5, green ≈ -2.05, blue ≈ 2.0, magenta ≈ 0.9. */
+export function yiqHue(c: readonly number[]): number { const [, i, q] = toYiq(c); return Math.atan2(q, i); }
+/** Hues that stay jewel-like when shown dark (not yellow, olive or orange, which turn khaki and brown). */
+export function darkable(c: readonly number[]): boolean { const h = yiqHue(c); return !(h > -1.9 && h < 0.1); }
+const hueDist = (a: number, b: number) => { const d = Math.abs(a - b) % (2 * Math.PI); return Math.min(d, 2 * Math.PI - d); };
+
+/** The two colours of the eyes-closed phosphene field (docs/VISUAL_DIRECTION.md §3: "two palette
+ *  colours"): the pair of darkable stops (not yellow/olive/orange, which turn khaki when dark) that are
+ *  farthest apart in hue (≥ 1 rad), weighted by their chroma — neon: hot magenta against cyan; the first
+ *  of the pair is the one that stays most vivid when dark. When the palette has no second hue at least
+ *  1 rad away (e.g. the all-blue `lunar`), the most vivid-dark stop and that hue rotated by ±1.75 rad
+ *  (a sparing complementary accent, §1.6), whichever rotation is darkable. Linear RGB. */
+export function phospheneColours(stops: readonly (readonly number[])[]): [[number, number, number], [number, number, number]] {
+  const chroma = (c: readonly number[]) => (Math.max(...c) - Math.min(...c)) / Math.max(1e-4, Math.max(...c));
+  // how vivid a colour still looks when dark: chromatic and low luminance per unit of its brightest
+  // channel (blue, violet, magenta, crimson beat cyan and green)
+  const dark = (c: readonly number[]) => chroma(c) * (1 - lumOf(c) / Math.max(1e-4, Math.max(...c)));
+  const dk = stops.filter((c) => darkable(c));
+  const pool = dk.length ? dk : [hexToLinear('#7b2ff7')];
+  let a: readonly number[] = pool.reduce((m, c) => (dark(c) > dark(m) ? c : m));
+  let b: readonly number[] | null = null;
+  let best = 0;
+  for (let i = 0; i < pool.length; i++) for (let j = i + 1; j < pool.length; j++) {
+    const d = hueDist(yiqHue(pool[i]), yiqHue(pool[j]));
+    if (d < 1.0) continue;
+    const s = d * Math.min(chroma(pool[i]), chroma(pool[j]));
+    if (s > best) {
+      best = s;
+      [a, b] = dark(pool[i]) >= dark(pool[j]) ? [pool[i], pool[j]] : [pool[j], pool[i]];
+    }
+  }
+  if (!b) {
+    const ha = yiqHue(a);
+    const [y, i, q] = toYiq(a);
+    const m = Math.hypot(i, q);
+    const cands = [1.75, -1.75].map((d) => fromYiq(y, m * Math.cos(ha + d), m * Math.sin(ha + d))).filter((c) => darkable(c));
+    if (cands.length) b = cands.reduce((m2, c) => (dark(c) > dark(m2) ? c : m2));
+  }
+  const out = (c: readonly number[]) => [c[0], c[1], c[2]] as [number, number, number];
+  return [out(limitRedShare(a)), out(limitRedShare(b ?? a))];
+}
+
+/** Red share R / (R + G + B) of broad-area colours stays at or below this (the red-flash rule is 0.8). */
+export const RED_SHARE_MAX = 0.72;
+
+/** Add a touch of blue (and a little green) to a colour whose red share exceeds RED_SHARE_MAX. */
+export function limitRedShare(c: readonly number[]): [number, number, number] {
+  const [r, g, b] = c;
+  const need = r * (1 / RED_SHARE_MAX - 1) - (g + b);
+  if (!(need > 0)) return [r, g, b];
+  return [r, g + 0.3 * need, b + 0.7 * need];
+}
+
+/** Two acidic complementary colours for difficult passages (docs/VISUAL_DIRECTION.md §3: "colder,
+ *  tighter, sharper, not greyer"): neon cyan (#05d9e8) against hot magenta (#ff2a6d with a touch of blue),
+ *  linear RGB. Neither is a saturated red (R / (R + G + B) < 0.8, BUILD.md 4.1). */
+export const ACID_COLOURS: readonly [number, number, number][] = Object.freeze([
+  [0.0, 0.69, 0.81] as [number, number, number],
+  [1.0, 0.03, 0.42] as [number, number, number],
+]);

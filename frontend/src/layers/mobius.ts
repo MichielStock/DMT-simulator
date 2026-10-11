@@ -190,6 +190,9 @@ export interface FoldResult {
   scale: number;
   iterations: number;
   converged: boolean;
+  /** centre of the cell (polygon round an image of A) containing z0: the inverse of the fold applied to
+   *  A = 0, tracked as an (anti-)Möbius matrix exactly like the shader (glsl/hyperbolic.frag.glsl) */
+  centre: Cx;
 }
 
 /** True when z lies in the closed fundamental triangle (within eps). */
@@ -206,6 +209,16 @@ export function foldToFundamental(t: TriangleMirrors, z0: Cx, maxIter = 48): Fol
   let z: Cx = [z0[0], z0[1]];
   let reflections = 0; let depth = 0; let scale = 1; let it = 0; let converged = false;
   const R2 = t.radius * t.radius;
+  // Q = F1⁻¹ ∘ F2⁻¹ ∘ …: matrix [qa qb; qc qd] applied to w (q = false) or conj(w) (q = true)
+  let qa: Cx = [1, 0]; let qb: Cx = [0, 0]; let qc: Cx = [0, 0]; let qd: Cx = [1, 0]; let q = false;
+  const append = (g: Mat2, anti: boolean) => {      // Q ← Q ∘ G
+    const gg = q ? g.map(cconj) as Mat2 : g;
+    const na = cadd(cmul(qa, gg[0]), cmul(qb, gg[2])); const nb = cadd(cmul(qa, gg[1]), cmul(qb, gg[3]));
+    const nc = cadd(cmul(qc, gg[0]), cmul(qd, gg[2])); const nd = cadd(cmul(qc, gg[1]), cmul(qd, gg[3]));
+    const sN = 1 / Math.max(cabs(na), cabs(nb), cabs(nc), cabs(nd));
+    qa = cscale(na, sN); qb = cscale(nb, sN); qc = cscale(nc, sN); qd = cscale(nd, sN);
+    if (anti) q = !q;
+  };
   for (; it < maxIter; it++) {
     // dihedral fold into the wedge
     let a = Math.atan2(z[1], z[0]);
@@ -213,9 +226,12 @@ export function foldToFundamental(t: TriangleMirrors, z0: Cx, maxIter = 48): Fol
     const k = Math.floor(a / t.wedge);
     if (k > 0) {
       const m = Math.hypot(z[0], z[1]);
-      const a2 = k % 2 === 0 ? a - k * t.wedge : (k + 1) * t.wedge - a;
+      const odd = k % 2 === 1;
+      const a2 = odd ? (k + 1) * t.wedge - a : a - k * t.wedge;
       z = [m * Math.cos(a2), m * Math.sin(a2)];
       reflections += k;
+      // inverse: rotation by +k·wedge (even k) or the reflection w ↦ e^{i(k+1)wedge} conj(w) itself (odd k)
+      append([cexpi(odd ? (k + 1) * t.wedge : k * t.wedge), cx(0), cx(0), cx(1)], odd);
     }
     const w = csub(z, t.centre);
     const l2 = cabs2(w);
@@ -224,12 +240,14 @@ export function foldToFundamental(t: TriangleMirrors, z0: Cx, maxIter = 48): Fol
       scale *= R2 / l2;
       reflections += 1;
       depth += 1;
+      // inversion in the circle (anti, an involution): w ↦ (c conj(w) + R² − |c|²) / (conj(w) − conj(c))
+      append([t.centre, cx(R2 - cabs2(t.centre)), cx(1), cscale(cconj(t.centre), -1)], true);
     } else if (k === 0) {
       converged = true;
       break;
     }
   }
-  return { z, reflections, depth, scale, iterations: it, converged };
+  return { z, reflections, depth, scale, iterations: it, converged, centre: cdiv(qb, qd) };
 }
 
 // ---------------------------------------------------------------------------------------------

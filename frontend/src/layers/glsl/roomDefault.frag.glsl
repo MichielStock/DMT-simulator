@@ -1,7 +1,9 @@
 // Room layer: the built-in procedural interior (BUILD.md 8.1 "Skip"), baked once into a colour and a
 // depth texture that then go through exactly the same displaced-mesh path as a photo.
-// A quiet corner of a room: plank floor with a rug, two plaster walls, a window on the left wall with
-// soft daylight falling across the floor, a sheer curtain and a framed picture. Ray-cast box, linear RGB.
+// A quiet corner of a room in late-afternoon light: plank floor with a patterned rug, sage plaster walls
+// with a faint damask on the back wall, a window on the left wall with dappled sunlight (leaf shadows)
+// falling across the floor, a sheer curtain and a framed picture. Ray-cast box, linear RGB. The fine
+// texture (plaster mottling, damask, rug medallions) gives the wallpaper folding something to fold.
 varying vec2 vUv;
 uniform float uOut;      // 0: colour (linear RGB), 1: depth (white = near)
 uniform float uAspect;   // bake aspect (w / h)
@@ -33,6 +35,25 @@ float windowPass(vec2 zy, float soft) {
 }
 
 float h1(float n) { return fract(sin(n * 127.1) * 43758.5453); }
+float h2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float vnoise(vec2 p) {
+  vec2 i = floor(p), f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(h2(i), h2(i + vec2(1.0, 0.0)), f.x), mix(h2(i + vec2(0.0, 1.0)), h2(i + vec2(1.0, 1.0)), f.x), f.y);
+}
+float fbm2(vec2 p) { return 0.5 * vnoise(p) + 0.25 * vnoise(p * 2.03 + 1.7) + 0.125 * vnoise(p * 4.1 + 3.1) + 0.125 * vnoise(p * 8.3 + 5.3); }
+// faint damask: an ogee lattice with a four-petal motif (0..1)
+float damask(vec2 p) {
+  vec2 c = vec2(0.34, 0.46);
+  vec2 g = p / c;
+  vec2 o = vec2(mod(floor(g.y), 2.0) * 0.5, 0.0);
+  vec2 f = fract(g + o) - 0.5;
+  float r = length(f * vec2(1.0, 0.75));
+  float a = atan(f.y, f.x);
+  float petal = smoothstep(0.03, 0.0, r - 0.17 - 0.07 * cos(4.0 * a));
+  float ring = smoothstep(0.015, 0.0, abs(r - 0.33 - 0.03 * cos(2.0 * a)));
+  return clamp(petal * 0.8 + ring * 0.6, 0.0, 1.0);
+}
 
 void main() {
   vec2 ndc = vUv * 2.0 - 1.0;
@@ -59,7 +80,8 @@ void main() {
   }
 
   vec3 L = normalize(SUN);
-  vec3 plaster = vec3(0.50, 0.40, 0.30);
+  // sage plaster with a little mottling
+  vec3 plaster = vec3(0.36, 0.42, 0.37) * (0.94 + 0.12 * fbm2(vec2(P.x + P.z, P.y) * 3.0));
   vec3 col;
   float sunlit = 0.0;
   // sunlight reaching P through the window
@@ -67,6 +89,9 @@ void main() {
     float s = (P.x - RMIN.x) / L.x;              // distance back along the light to the window plane
     vec3 Q = P - L * s;
     sunlit = windowPass(Q.zy, 0.02 + 0.035 * s) * step(0.0, s);
+    // leaves outside the window: dappled light, softer the further it falls
+    float leaf = fbm2(Q.zy * vec2(3.2, 2.6) + vec2(2.0, 0.0));
+    sunlit *= mix(1.0, smoothstep(0.3, 0.7, leaf), 0.6 * smoothstep(0.0, 1.6, Q.y - 0.6) + 0.25);
   }
   // ambient: daylight bouncing from the window, falling off across the room, plus soft corner occlusion
   vec3 wc = vec3(RMIN.x, 0.5 * (WY.x + WY.y), 0.5 * (WZ.x + WZ.y));
@@ -93,7 +118,15 @@ void main() {
     float rug = box2(P.xz, vec2(-1.15, -3.55), vec2(1.25, -1.35));
     float rugIn = 1.0 - smoothstep(-0.01, 0.01, rug);
     float border = smoothstep(-0.2, -0.17, rug) * (1.0 - smoothstep(-0.12, -0.09, rug));
-    vec3 rugC = mix(vec3(0.33, 0.15, 0.11), vec3(0.42, 0.33, 0.24), border);
+    // crimson field, indigo border, gold medallion and corner motifs
+    vec2 rc = P.xz - vec2(0.05, -2.45);
+    float rr = length(rc * vec2(1.0, 0.85));
+    float ra = atan(rc.y, rc.x);
+    float medal = smoothstep(0.02, 0.0, abs(rr - 0.42 - 0.06 * cos(8.0 * ra))) + smoothstep(0.2, 0.17, rr - 0.04 * cos(6.0 * ra));
+    float field = 0.85 + 0.15 * smoothstep(0.3, 0.7, fbm2(P.xz * 6.0));
+    vec3 rugC = vec3(0.30, 0.05, 0.06) * field;
+    rugC = mix(rugC, vec3(0.50, 0.33, 0.10), clamp(medal, 0.0, 1.0) * 0.8);
+    rugC = mix(rugC, vec3(0.06, 0.07, 0.22), border);
     rugC *= 0.92 + 0.08 * h1(floor(P.x * 60.0) + floor(P.z * 60.0) * 13.0);
     col = mix(col, rugC, rugIn);
   } else if (face == 1) {
@@ -118,24 +151,26 @@ void main() {
     col = mix(col, vec3(0.74, 0.68, 0.58) * folds, (cz1 + cz2) * cy * 0.9);
     if (glass > 0.5) amb = 1.0;
   } else if (face == 3) {
-    col = plaster * vec3(1.0, 0.97, 0.93);
+    col = plaster * vec3(1.0, 0.97, 0.93) * (1.0 + 0.09 * damask(P.zy));
   } else {
-    col = plaster;
+    col = plaster * (1.0 + 0.09 * damask(P.xy + vec2(0.1, 0.0)));
     // a framed picture on the back wall
     vec2 pc = vec2(0.35, 1.55), ph = vec2(0.5, 0.36);
     float fd = box2(P.xy, pc - ph, pc + ph);
     float canvasIn = 1.0 - smoothstep(-0.055, -0.05, fd);
     float frameIn = (1.0 - smoothstep(-0.003, 0.003, fd)) * (1.0 - canvasIn);
     vec2 q = (P.xy - pc) / ph;
-    vec3 art = mix(vec3(0.55, 0.38, 0.22), vec3(0.20, 0.33, 0.36), smoothstep(-0.6, 0.6, q.x + 0.4 * sin(q.y * 2.0)));
-    art = mix(art, vec3(0.62, 0.52, 0.34), smoothstep(0.35, 0.0, length(q - vec2(0.35, 0.25))));
+    // a sea at sunset: orange sky, a sun, deep blue water with a glitter path
+    vec3 art = mix(vec3(0.08, 0.14, 0.32), vec3(0.62, 0.28, 0.10), smoothstep(-0.15, 0.25, q.y + 0.05 * sin(q.x * 5.0)));
+    art = mix(art, vec3(0.70, 0.55, 0.25), smoothstep(0.22, 0.05, length(q - vec2(0.3, 0.32))));
+    art += vec3(0.35, 0.25, 0.08) * smoothstep(0.12, 0.0, abs(q.x - 0.3)) * step(q.y, -0.15) * (0.5 + 0.5 * sin(q.y * 60.0));
     col = mix(col, vec3(0.12, 0.08, 0.05), frameIn);
     col = mix(col, art, canvasIn);
   }
   // skirting boards
   if (face >= 2 && face <= 4) col = mix(col, vec3(0.62, 0.58, 0.52), smoothstep(0.125, 0.115, P.y) * (face == 2 && windowPass(P.zy, 0.004) > 0.5 ? 0.0 : 1.0));
 
-  vec3 sunC = vec3(1.0, 0.86, 0.66);
+  vec3 sunC = vec3(1.0, 0.80, 0.55);   // late afternoon
   vec3 lit = (face == 2 && windowPass(P.zy, 0.004) > 0.5) ? col : col * mix(vec3(0.82, 0.86, 1.0), vec3(1.0), 0.6) * amb * ao * 0.9 + col * sunC * 1.35 * sunlit;
   // gentle vignette of the bake itself
   float vig = 1.0 - 0.28 * dot(ndc * vec2(0.8, 1.0), ndc * vec2(0.8, 1.0));

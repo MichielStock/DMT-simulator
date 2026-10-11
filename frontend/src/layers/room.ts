@@ -20,8 +20,8 @@ import { NOISE_GLSL } from './noise';
 import fieldSample from './glsl/fieldSample.glsl?raw';
 import {
   CAMERA_FOV_DEG, DRIFT_SPEED, DRIFT_TAU_S, PLANE_DEPTH, SPHERE_DEPTH, ROOM_FREQS, buildPlaneGeometry, buildSphereGeometry, cameraPose,
-  coverFit, roomEffects, vividColours, selectRoomGeometry, smoothstep, tracerFeedback, wallpaperForSeed,
-  type DepthMapping, type RoomGeometryKind,
+  coverFit, roomEffects, selectRoomGeometry, smoothstep, tracerFeedback, wallpaperForSeed, jewelStops, hexToLinear,
+  lumOf, ACID_COLOURS, phospheneColours, phospheneZoomRate, type DepthMapping, type RoomGeometryKind,
 } from './roomGeometry';
 import quadVert from './glsl/roomQuad.vert.glsl?raw';
 import defaultFrag from './glsl/roomDefault.frag.glsl?raw';
@@ -91,6 +91,15 @@ export class RoomLayer implements Layer<SharedState> {
   private lookSpeed = 0;
   private ownWeights: LayerWeights | null = null;
   private distortion = 0;
+  private zoom = 0;          // phosphene tunnel flow (cortical x offset), wraps with the field texture
+  // palette-derived colours (linear RGB), shared by reference with both materials' uniforms
+  private stops = [0, 1, 2, 3].map(() => new THREE.Vector3());
+  private acid = ACID_COLOURS.map((c) => new THREE.Vector3(...c));
+  private bloomCol = new THREE.Vector3(1, 0.8, 0.4);
+  private baseCol = new THREE.Vector3(0.02, 0.01, 0.04);
+  private phosCol = [new THREE.Vector3(0.4, 0.1, 1), new THREE.Vector3(0.1, 0.6, 1)];
+  private patchCol = [new THREE.Vector3(0.4, 0.1, 1), new THREE.Vector3(0.1, 0.6, 1)];
+  private paletteKey: string | null = null;
 
   constructor() {
     const u = (v: unknown) => ({ value: v });
@@ -104,7 +113,8 @@ export class RoomLayer implements Layer<SharedState> {
         uFxTime: u(0), uBreathe: u(0), uBreathScale: u(0.04), uPulse: u(0), uBreathHz: u(ROOM_FREQS.breathNoise),
         uImage: u(null), uImgAspect: u(this.imgAspect), uWarp: u(0), uDrift: u(0), uFlow: u(null),
         uTile: u(0), uTileScale: u(0.12), uTileOrigin: u(this.tileOrigin), uGroup: u(0),
-        uSat: u(1), uHue: u(0), uHueHz: u(ROOM_FREQS.hueWander), uPalette: u(0), uPalTint: u(new THREE.Vector3(1, 0.7, 0.3)),
+        uSat: u(1), uHue: u(0), uHueHz: u(ROOM_FREQS.hueWander), uPalette: u(0), uStops: u(this.stops), uAcid: u(this.acid),
+        uBrightPos: u(2), uPatchCol: u(this.patchCol), uDeep: u(0), uShoulder: u(0), uFringe: u(0), uGlow: u(0), uPhoto: u(0), uFold: u(0),
         uChallenge: u(0), uField: u(null), uHasField: u(0),
         uMaskHz: u(ROOM_FREQS.driftField), uResolution: u(new THREE.Vector2(1, 1)), uViewAspect: u(16 / 9),
       },
@@ -116,8 +126,9 @@ export class RoomLayer implements Layer<SharedState> {
     }, NOISE_GLSL);
     this.finalMat = quadMaterial(finalFrag, {
       uRoom: u(null), uEyes: u(0), uWeight: u(1), uFade: u(0), uField: u(null), uHasField: u(0), uFxTime: u(0), uPhosHz: u(ROOM_FREQS.phosphene),
-      uViewAspect: u(16 / 9), uPhos: u(0), uPulse: u(0),
-      uPalA: u(new THREE.Vector3(1, 0.7, 0)), uPalB: u(new THREE.Vector3(0.1, 0.8, 1)), uPalC: u(new THREE.Vector3(1, 0.1, 0.8)),
+      uViewAspect: u(16 / 9), uPx: u(1 / 720), uPhos: u(0), uPulse: u(0), uChallenge: u(0),
+      uBloom: u(0), uBloomCol: u(this.bloomCol), uStops: u(this.stops), uAcid: u(this.acid), uBase: u(this.baseCol),
+      uPhosCol: u(this.phosCol), uPhosHi: u(0), uZoom: u(0), uTunnel: u(1), uRings: u(1), uDebug: u(0), uFold: u(0),
     }, NOISE_GLSL + fieldSample + '\n');
     this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.finalMat);
     this.quad.frustumCulled = false;
@@ -137,7 +148,8 @@ export class RoomLayer implements Layer<SharedState> {
     this.camera.updateProjectionMatrix();
     if (!this.roomRT) {
       this.roomRT = rt(this.w, this.h, true);
-      this.hist = [rt(this.w, this.h, false), rt(this.w, this.h, false)];
+      // mips: the final pass reads the glow emission (alpha) from the mip chain as a cheap bloom
+      this.hist = [rt(this.w, this.h, false, true), rt(this.w, this.h, false, true)];
     } else {
       this.roomRT.setSize(this.w, this.h);
       this.hist![0].setSize(this.w, this.h);
@@ -315,7 +327,7 @@ export class RoomLayer implements Layer<SharedState> {
     this.tileOrigin.y += dt * fx.speed * ROOM_FREQS.tileCrawl * fx.tileScale * 0.6;
 
     const field = state.fieldTexture instanceof THREE.Texture ? state.fieldTexture : null;
-    const vivid = vividColours(state.palette?.colours);
+    this.updatePalette(state.palette?.colours);
 
     // ---- camera (user-initiated look only; comfort clamp already applied in main.ts) ----
     const pose = cameraPose(this.kind, state.look.yaw, state.look.pitch);
@@ -353,7 +365,12 @@ export class RoomLayer implements Layer<SharedState> {
     u.uSat.value = fx.sat;
     u.uHue.value = fx.hue;
     u.uPalette.value = fx.palette;
-    (u.uPalTint.value as THREE.Vector3).set(...vivid[0]);
+    u.uDeep.value = fx.deep;
+    u.uShoulder.value = fx.shoulder;
+    u.uFringe.value = fx.fringe;
+    u.uGlow.value = fx.glow;
+    u.uFold.value = fx.fold;
+    u.uPhoto.value = this.kind === 'procedural' ? 0 : 1;
     u.uChallenge.value = challenge;
     u.uField.value = field;
     u.uHasField.value = field ? 1 : 0;
@@ -361,8 +378,10 @@ export class RoomLayer implements Layer<SharedState> {
     u.uViewAspect.value = this.w / this.h;
     u.uImgAspect.value = this.imgAspect;
     renderer.setRenderTarget(this.roomRT);
-    renderer.setClearColor(0x000000, 1);
+    const clearAlpha = renderer.getClearAlpha();
+    renderer.setClearColor(0x000000, 0);   // alpha = glow emission: none where the mesh is absent
     renderer.clear(true, true, false);
+    renderer.setClearColor(0x000000, clearAlpha);
     renderer.render(this.meshScene, this.camera);
 
     // ---- tracers ----
@@ -385,15 +404,45 @@ export class RoomLayer implements Layer<SharedState> {
     f.uHasField.value = field ? 1 : 0;
     f.uFxTime.value = this.fxTime;
     f.uViewAspect.value = this.w / this.h;
+    f.uPx.value = 1 / this.h;
     f.uPhos.value = smoothstep(0.3, 4.5, v);
+    f.uPhosHi.value = smoothstep(2, 8, v);
+    this.zoom = (this.zoom + dt * phospheneZoomRate(challenge)) % 1;
+    f.uZoom.value = this.zoom;
+    f.uTunnel.value = 1 + 0.6 * challenge;
+    f.uRings.value = 1 + challenge;
+    f.uFold.value = fx.fold;
+    f.uDebug.value = (globalThis as { __roomDebug?: number }).__roomDebug ?? 0;
     f.uPulse.value = state.pulse;
-    (f.uPalA.value as THREE.Vector3).set(...vivid[0]);
-    (f.uPalB.value as THREE.Vector3).set(...vivid[1]);
-    (f.uPalC.value as THREE.Vector3).set(...vivid[2]);
+    f.uChallenge.value = challenge;
+    f.uBloom.value = fx.bloom * (1 - challenge * 0.3);
     this.quad.material = this.finalMat;
     renderer.setRenderTarget(target);
     renderer.render(this.quadScene, this.quadCam);
     this.hist = [prev, cur];
+  }
+
+  /** Jewel stops, bloom colour and base tint from the trip palette (recomputed only when it changes). */
+  private updatePalette(colours: readonly string[] | undefined): void {
+    const key = (colours ?? []).join(',');
+    if (key === this.paletteKey) return;
+    this.paletteKey = key;
+    const stops = jewelStops(colours);
+    stops.forEach((c, i) => this.stops[i].set(...c));
+    phospheneColours(stops).forEach((c, i) => {
+      this.phosCol[i].set(...c);
+      this.patchCol[i].set(...c).multiplyScalar(1 / Math.max(1e-4, ...c));
+    });
+    // bloom colour: the most chromatic of the two brightest stops (a sum of two hues would be pastel)
+    const chroma = (c: THREE.Vector3) => (Math.max(c.x, c.y, c.z) - Math.min(c.x, c.y, c.z)) / Math.max(1e-4, c.x, c.y, c.z);
+    const b = (chroma(this.stops[2]) >= chroma(this.stops[3]) ? this.stops[2] : this.stops[3]).clone();
+    this.bloomCol.copy(b.multiplyScalar(1 / Math.max(1e-4, b.x, b.y, b.z)));
+    // the stop that carries the most luminance at full chroma (window, lamps)
+    const cap = (c: THREE.Vector3) => lumOf([c.x, c.y, c.z]) / Math.max(1e-4, c.x, c.y, c.z);
+    this.meshMat.uniforms.uBrightPos.value = cap(this.stops[3]) > cap(this.stops[2]) ? 3 : 2;
+    const all = (colours ?? []).map(hexToLinear);
+    const darkest = all.length ? all.reduce((m, c) => (lumOf(c) < lumOf(m) ? c : m)) : [0.02, 0.01, 0.04] as [number, number, number];
+    this.baseCol.set(...darkest);
   }
 
   dispose(): void {

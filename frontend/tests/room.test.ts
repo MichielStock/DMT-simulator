@@ -205,7 +205,7 @@ describe('effect amounts and safety at source', () => {
     expect(v5.hue).toBeLessThan(0.5);   // "slight" hue rotation
     for (const v of [0, 2, 5, 9]) for (const d of [0, 0.5, 1]) for (const c of [0, 1]) {
       const f = roomEffects(v, d, c);
-      for (const k of ['breathe', 'drift', 'warp', 'tile', 'tracer', 'palette'] as const) {
+      for (const k of ['breathe', 'drift', 'warp', 'tile', 'tracer', 'palette', 'deep', 'shoulder', 'fringe', 'glow', 'bloom'] as const) {
         expect(f[k]).toBeGreaterThanOrEqual(0); expect(f[k]).toBeLessThanOrEqual(1);
       }
       expect(f.tileScale).toBeGreaterThan(0.04);
@@ -232,6 +232,44 @@ describe('effect amounts and safety at source', () => {
   });
 });
 
+describe('visual direction (docs/VISUAL_DIRECTION.md)', () => {
+  it('v 1: the room is itself, slightly richer; vivid by v 3; jewelled by v 5; a passage never desaturates', () => {
+    const v1 = roomEffects(1, 0.26, 0), v3 = roomEffects(3, 1, 0), v5 = roomEffects(5, 1, 0), v9 = roomEffects(9, 1, 0);
+    expect(v1.sat).toBeGreaterThan(1.05); expect(v1.sat).toBeLessThan(1.15);   // ≈ +10 %
+    expect(v1.deep).toBeLessThan(0.1); expect(v1.palette).toBeLessThan(0.05); expect(v1.glow).toBeLessThan(0.05);
+    expect(v3.sat).toBeGreaterThan(1.6); expect(v3.palette).toBeGreaterThan(0.2); expect(v3.fringe).toBeGreaterThan(0.3);
+    expect(v5.sat).toBeGreaterThan(v3.sat); expect(v5.deep).toBeGreaterThan(v3.deep); expect(v5.glow).toBeGreaterThan(v3.glow);
+    expect(v9.palette).toBeGreaterThanOrEqual(v5.palette);
+    const c = roomEffects(9, 1, 1);
+    expect(c.sat).toBeGreaterThanOrEqual(v9.sat);
+    expect(c.palette).toBeGreaterThan(v9.palette);
+  });
+  it('jewel stops: chromatic palette colours, dark → bright, no background black or pastel', async () => {
+    const { jewelStops, lumOf, hexToLinear } = await import('../src/layers/roomGeometry');
+    const neon = jewelStops(['#0d0221', '#ff2a6d', '#05d9e8', '#d1f7ff', '#7b2ff7', '#f9c80e']);
+    expect(neon).toHaveLength(4);
+    for (let i = 1; i < 4; i++) expect(lumOf(neon[i])).toBeGreaterThanOrEqual(lumOf(neon[i - 1]));
+    const near = (a: number[], hex: string) => hexToLinear(hex).every((x, i) => Math.abs(x - a[i]) < 1e-6);
+    expect(neon.some((c) => near(c, '#d1f7ff'))).toBe(false);   // pastel skipped
+    expect(neon.some((c) => near(c, '#0d0221'))).toBe(false);   // background skipped
+    for (const pal of [[], null, ['#808080', '#ffffff']]) {
+      const s = jewelStops(pal as string[] | null);
+      expect(s).toHaveLength(4);
+      for (const c of s) expect(Math.max(...c) - Math.min(...c)).toBeGreaterThan(0.3);
+    }
+  });
+  it('broad-area colours stay below the saturated-red share (BUILD.md 4.1)', async () => {
+    const { jewelStops, limitRedShare, RED_SHARE_MAX, ACID_COLOURS } = await import('../src/layers/roomGeometry');
+    const share = (c: number[]) => c[0] / (c[0] + c[1] + c[2]);
+    for (const pal of [['#1a0505', '#7a1f0f', '#d9480f', '#f59f00', '#ffd43b', '#9c36b5'], ['#ff0000', '#cc0000', '#ff2200']]) {
+      for (const c of jewelStops(pal)) expect(share(c)).toBeLessThanOrEqual(RED_SHARE_MAX + 1e-9);
+    }
+    expect(share(limitRedShare([1, 0, 0]))).toBeCloseTo(RED_SHARE_MAX, 9);
+    expect(limitRedShare([0.2, 0.5, 0.1])).toEqual([0.2, 0.5, 0.1]);
+    for (const c of ACID_COLOURS) expect(share(c)).toBeLessThan(0.8);
+  });
+});
+
 describe('palette', () => {
   it('vivid colours skip near-black background colours', async () => {
     const { vividColours } = await import('../src/layers/roomGeometry');
@@ -240,5 +278,51 @@ describe('palette', () => {
     for (const c of v) expect(Math.max(...c)).toBeGreaterThan(0.1);
     expect(vividColours([])).toHaveLength(3);
     expect(vividColours(null)).toHaveLength(3);
+  });
+});
+
+describe('polish r2: progression, phosphene field, passage (docs/VISUAL_DIRECTION.md, NOTES D-P-room-r2)', () => {
+  it('the room folds only at the highest intensities, and visibly more at v 9 than at v 7.5', () => {
+    expect(roomEffects(5, 1, 0).fold).toBe(0);
+    expect(roomEffects(6.4, 1, 0).fold).toBe(0);
+    const f75 = roomEffects(7.5, 1, 0).fold, f9 = roomEffects(9, 1, 0).fold;
+    expect(f75).toBeGreaterThan(0.1);
+    expect(f9 - f75).toBeGreaterThan(0.4);
+    expect(roomEffects(9, 0, 0).fold).toBe(0);   // no distortion amount → no fold
+  });
+  it('tunnel flow of the eyes-closed field stays slow, and within 2 Hz in a passage (BUILD.md 4.1)', async () => {
+    const { phospheneZoomRate, FIELD_MIN_PERIOD_X } = await import('../src/layers/roomGeometry');
+    expect(phospheneZoomRate(0) / FIELD_MIN_PERIOD_X).toBeLessThanOrEqual(0.13);
+    expect(phospheneZoomRate(1)).toBeGreaterThan(phospheneZoomRate(0));
+    // worst case: the flow plus the neural field's own drift cap (0.3 Hz)
+    expect(phospheneZoomRate(1) / FIELD_MIN_PERIOD_X + 0.3).toBeLessThanOrEqual(1.0);
+  });
+  it('phosphene colours: the two most different darkable hues (neon: hot magenta against cyan)', async () => {
+    const { jewelStops, phospheneColours, yiqHue, darkable, hexToLinear } = await import('../src/layers/roomGeometry');
+    const neon = phospheneColours(jewelStops(['#0d0221', '#ff2a6d', '#05d9e8', '#d1f7ff', '#7b2ff7', '#f9c80e']));
+    const near = (a: number[], b: number[]) => a.every((x, i) => Math.abs(x - b[i]) < 0.12);
+    expect(neon.some((c) => near(c, hexToLinear('#05d9e8')))).toBe(true);
+    expect(neon.some((c) => c[0] > 0.9 && c[1] < 0.15)).toBe(true);   // hot magenta (red share limited)
+    for (const pal of [['#060b1f', '#1c2c5b', '#4361ee', '#7fd1ff', '#c8b6ff', '#e9d8a6'], ['#1b0a3c', '#5b1a8f', '#c2187a', '#e8a33b', '#1f8f7a', '#3a5bd9']]) {
+      const [a, b] = phospheneColours(jewelStops(pal));
+      const d = Math.abs(yiqHue(a) - yiqHue(b)) % (2 * Math.PI);
+      expect(Math.min(d, 2 * Math.PI - d)).toBeGreaterThanOrEqual(1.0);
+      expect(darkable(a) && darkable(b)).toBe(true);
+      for (const c of [a, b]) expect(c[0] / (c[0] + c[1] + c[2])).toBeLessThan(0.8);
+    }
+  });
+  it('a passage: two acid complementaries (cyan against magenta), never a saturated red', async () => {
+    const { ACID_COLOURS, yiqHue } = await import('../src/layers/roomGeometry');
+    const d = Math.abs(yiqHue(ACID_COLOURS[0]) - yiqHue(ACID_COLOURS[1])) % (2 * Math.PI);
+    expect(Math.min(d, 2 * Math.PI - d)).toBeGreaterThan(2.5);
+    for (const c of ACID_COLOURS) expect(c[0] / (c[0] + c[1] + c[2])).toBeLessThan(0.8);
+  });
+  it('shaders keep the safety-at-source budget of the periodic lace and the aperiodic blooms', () => {
+    const fin = readFileSync(resolve(__dirname, '../src/layers/glsl/roomFinal.frag.glsl'), 'utf8');
+    const floor = Number(/const float L_FLOOR = ([0-9.]+);/.exec(fin)![1]);
+    const ratio = Number(/const float LACE_RATIO = ([0-9.]+);/.exec(fin)![1]);
+    expect(floor).toBeLessThanOrEqual(0.02);
+    expect((ratio - 1) / (ratio + 1)).toBeLessThan(0.45);   // bare lace under the guard's 0.45 tile test
+    expect(fin).toMatch(/1\.0 - 0\.6 \* uChallenge/);       // a passage darkens the base, never lifts it
   });
 });
