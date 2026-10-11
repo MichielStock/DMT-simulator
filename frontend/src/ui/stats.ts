@@ -17,7 +17,10 @@ export function statsTailLines(s: Stats): StatsLine[] {
   const out: StatsLine[] = [];
   if (s.ended_early_at) out.push({ text: ` ENDED EARLY AT ${s.ended_early_at}`, cls: 'ended-early' });
   out.push({ text: '' });
-  out.push({ text: ` INTENSITY  0:00 ${'─'.repeat(22)} ${fmtMs(s.session_minutes ?? 0)}`, cls: 'dim' });
+  // the time axis spans exactly the sparklines (same start column, same end column): the whole session on the clock
+  const end = fmtMs(s.session_minutes ?? 0);
+  const width = Math.max([...(s.sparkline_real ?? '')].length, 12 + end.length);
+  out.push({ text: ` CLOCK 0:00 ${'─'.repeat(Math.max(2, width - 6 - end.length))} ${end}`, cls: 'dim' });
   out.push({ text: '', parts: [{ text: ' REAL  ' }, { text: s.sparkline_real ?? '', cls: 'spark-real' }] });
   out.push({ text: '', parts: [{ text: ' YOU   ' }, s.sparkline_you
     ? { text: s.sparkline_you, cls: 'spark-you' } : { text: 'NO CURVE DRAWN', cls: 'dim' }] });

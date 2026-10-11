@@ -21,6 +21,7 @@ import yaml
 
 from backend import llm, runtime
 from backend.batch.coder import categories as code_categories
+from backend.report.frames import list_frames
 from backend.report.stats import LAYER_ORDER, render_text
 from backend.safety.content import CONTENT_LIMITS, check_text
 
@@ -524,17 +525,22 @@ def _front_matter(title: str, stats: dict, trip_script: dict, ctx: dict, report:
     return "\n".join(lines)
 
 
-def _markdown(title: str, stats: dict, trip_script: dict, ctx: dict, report: dict, session_dir: Path) -> str:
+def _markdown(title: str, stats: dict, trip_script: dict, ctx: dict, report: dict, session_dir: Path,
+              events: list[dict] | None = None) -> str:
     out = [_front_matter(title, stats, trip_script, ctx, report), "", f"# {title}", "", f"> {DISCLAIMER}", "",
            "```text", render_text(stats), "```", ""]
     for p in report["paragraphs"]:
         out += [p["text"], ""]
     out += ["*Sentences the memory model could not anchor to a remembered moment are marked as inferred in report.json "
             "and highlighted in report.html.*", ""]
-    frames = sorted((session_dir / "frames").glob("*.png")) if (session_dir / "frames").exists() else []
+    from backend.report.html import story_frames  # html imports this module (DISCLAIMER)
+
+    frames = story_frames(session_dir, list_frames(session_dir, events))   # no byte-identical copies (D-F2)
     figs = [f for f in ("curves.png", "timeline.png", "curve_vs_drawn.png") if (session_dir / "figures" / f).exists()]
     if frames:
-        out += ["## Captured frames", ""] + [f"![{f.stem}](frames/{f.name})" for f in frames] + [""]
+        out += ["## Snapshots", ""]
+        for f in frames:
+            out += [f"![{f['caption']}]({f['path']})", f"*{f['caption']}*", ""]
     out += ["## Figures", ""] + [f"![{f[:-4]}](figures/{f})" for f in
                                  (figs or ["curves.png", "timeline.png", "curve_vs_drawn.png"])] + [""]
     return "\n".join(out)
@@ -560,6 +566,7 @@ def write_report(session_dir, trip_script: dict, intake: dict | None, events: li
               "provenance": prov, "mentions": body.get("mentions", []), "disclaimer": DISCLAIMER,
               "paragraphs": body["paragraphs"], "gaps": ctx["gaps"]}
     (session_dir / "report.json").write_text(json.dumps(report, indent=1, ensure_ascii=False), encoding="utf-8")
-    (session_dir / "simulated-trip-report.md").write_text(_markdown(title, stats, trip_script, ctx, report, session_dir),
+    (session_dir / "simulated-trip-report.md").write_text(_markdown(title, stats, trip_script, ctx, report, session_dir,
+                                                                    events),
                                                           encoding="utf-8")
     return report

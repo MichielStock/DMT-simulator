@@ -87,6 +87,7 @@ body.in-trip::after { display: none; }
 .upper { text-transform: uppercase; }
 .center { text-align: center; }
 .gap { height: 1.15em; }
+.note { color: var(--dim); text-shadow: none; white-space: normal; }
 
 h1, h2 {
   font-weight: normal;
@@ -111,15 +112,12 @@ button.key, .key {
   text-transform: uppercase;
 }
 button.key:hover:not(:disabled), button.key:focus-visible { color: var(--bg); background: var(--amber); text-shadow: none; outline: none; }
+button.key.small { font-size: 0.85em; }
 button.key:disabled { color: var(--dim); text-shadow: none; cursor: default; }
 
 /* blinking block cursor, 1 Hz, small area only */
 .cursor { display: inline-block; animation: hs-blink 1s steps(1, end) infinite; }
 @keyframes hs-blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
-
-/* menu */
-.menu .item { white-space: pre; cursor: pointer; }
-.menu .marker { display: inline-block; width: 2ch; }
 
 /* title: hue cycle on the ASCII art only, 10 s, 12 equal-lightness stops */
 .title-art { animation: hs-hue 10s linear infinite; }
@@ -139,28 +137,172 @@ button.key:disabled { color: var(--dim); text-shadow: none; cursor: default; }
   100%    { color: #ffb000; text-shadow: 0 0 0.12em #ffb00080; }
 }
 
-/* checkbox drawn as [X] / [ ] */
-.check { cursor: pointer; display: block; white-space: pre-wrap; }
-.check input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.check .box::before { content: '[ ]'; }
-.check input:checked + .box::before { content: '[X]'; }
-.check input:focus-visible + .box { background: var(--amber); color: var(--bg); text-shadow: none; }
+/* ============================================================================================
+   Design system for the screens around the trip (NOTES D-S5). Amber on warm black, one accent
+   (cyan) for "ready / done / calm", frames drawn with CSS borders in the dim colour, a 1.15 em
+   vertical rhythm. No animation here except the 1 Hz cursor, the 10 s title hue cycle and the
+   12 s breath (all within BUILD.md 15.1 / 4.1).
+   ============================================================================================ */
+:root {
+  --lh: 1.15em;
+  --soft: rgba(255, 176, 0, 0.06);
+  --soft2: rgba(255, 176, 0, 0.12);
+  --cyan-glow: 0 0 0.12em rgba(79, 227, 255, 0.5);
+}
 
-/* intake */
-.progress { margin-bottom: 2.3em; }
-.option { display: block; cursor: pointer; white-space: pre; }
-.option.selected { color: var(--bg); background: var(--amber); text-shadow: none; }
-.option .hint { color: var(--dim); text-shadow: none; }
-.option.selected .hint { color: var(--bg); }
+/* panel: a double frame (╔═╗) with its title set into the top border */
+.panel {
+  position: relative;
+  width: min(84ch, 100%);
+  padding: 1.7em 3.5ch 1.5em;
+  border: 0.2em double var(--dim);
+  background: rgba(255, 176, 0, 0.015);
+  box-shadow: 0 0 2.5em rgba(255, 176, 0, 0.05), inset 0 0 2.5em rgba(255, 176, 0, 0.025);
+}
+.panel-title {
+  position: absolute; top: 0; left: 3ch; transform: translateY(-58%);
+  margin: 0; padding: 0 1ch; background: var(--bg); color: var(--amber); letter-spacing: 0.06em;
+}
+.panel p { line-height: 1.25; }
+.promise { color: var(--dim); text-shadow: none; text-align: center; letter-spacing: 0.06em; }
+.actions { display: flex; align-items: center; gap: 3ch; margin-top: 1.7em; }
+.keys-hint { color: var(--dim); text-shadow: none; margin-top: 1.2em; text-align: center; }
+
+/* primary action: framed, inverted (it is what [ENTER] does) */
+button.key.primary { border: 1px solid var(--amber); padding: 0.08em 1.4ch; background: var(--amber); color: var(--bg); text-shadow: none;
+  box-shadow: 0 0 0.9em rgba(255, 176, 0, 0.25); }
+button.key.primary:hover:not(:disabled) { box-shadow: 0 0 1.3em rgba(255, 176, 0, 0.4); }
+/* disabled primary (safety CONTINUE before the box is ticked): dim amber in a dashed dim frame, so it
+   reads as "tick the box first" rather than as a broken control */
+button.key.primary:disabled { background: transparent; color: var(--dim); border: 1px dashed var(--dim); box-shadow: none;
+  text-shadow: none; opacity: 1; cursor: not-allowed; }
+button.key.dim-key { color: var(--dim); text-shadow: none; }
+button.key.dim-key:hover { color: var(--bg); }
+
+/* ---------- title ---------- */
+.title-wrap { display: flex; flex-direction: column; align-items: center; }
+.title-art { font-size: 1.15em; line-height: 1; margin-bottom: 1.4em; font-family: 'HyperspaceBox', 'VT323', monospace; }
+.title-sub { letter-spacing: 0.06em; line-height: var(--lh); }
+.tagline { margin-top: 1.4em; letter-spacing: 0.32em; }
+.menu { margin-top: 2.6em; display: flex; flex-direction: column; gap: 0.3em; }
+.menu-item { display: grid; grid-template-columns: 2ch 9ch 16ch; padding: 0.06em 1.5ch 0.06em 1ch; cursor: pointer; white-space: pre; }
+.menu-item .mkey { color: var(--dim); text-shadow: none; }
+.menu-item.selected { background: var(--amber); color: var(--bg); text-shadow: none; box-shadow: 0 0 1em rgba(255, 176, 0, 0.25); }
+.menu-item.selected .mkey { color: var(--bg); }
+.tagline .cursor { margin-left: 0.6ch; letter-spacing: 0; }
+.footer { position: absolute; left: 0; right: 0; bottom: 1.6em; text-align: center; letter-spacing: 0.04em; }
+
+/* ---------- safety ---------- */
+.safety-panel { width: min(68ch, 100%); }
+.check { display: flex; align-items: baseline; gap: 1.5ch; cursor: pointer; margin-top: 0.4em;
+  padding: 0.55em 1.5ch; border: 1px dashed var(--dim); white-space: normal; }
+.check:hover { border-color: var(--amber); background: var(--soft); }
+.check input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.check .box::before { content: '[ ]'; white-space: pre; }
+.check input:checked + .box::before { content: '[X]'; color: var(--cyan); text-shadow: var(--cyan-glow); }
+.check input:focus-visible + .box { background: var(--amber); color: var(--bg); text-shadow: none; }
+.check-text { flex: 1; }
+.check-key { color: var(--dim); text-shadow: none; white-space: nowrap; }
+.safety.checked .check { border-style: solid; border-color: rgba(79, 227, 255, 0.55); }
+
+/* ---------- about / messages ---------- */
+.about-panel { width: min(80ch, 100%); }
+.about-sec { display: grid; grid-template-columns: 26ch 1fr; column-gap: 3ch; margin-bottom: 0.9em; }
+.about-head { letter-spacing: 0.04em; }
+.about-body p { margin: 0 0 0.35em 0; }
+.message-panel { width: min(60ch, 100%); }
+
+/* ---------- setup ---------- */
+.setup-panel { width: min(90ch, 100%); }
+.setup-grid { display: grid; grid-template-columns: 8ch minmax(0, 1fr); column-gap: 2.5ch; row-gap: 1.5em; margin-top: 1.6em; align-items: start; }
+.row-label { padding-top: 0.45em; letter-spacing: 0.06em; }
+.row-hint { color: var(--dim); text-shadow: none; font-size: 0.8em; }
+.cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.6ch; }
+.card { border: 1px solid var(--dim); padding: 0.45em 1.4ch 0.6em; cursor: pointer; min-height: 5.4em; user-select: none; }
+.card:hover { border-color: var(--amber); background: var(--soft); }
+.card-key { color: var(--dim); text-shadow: none; font-size: 0.85em; }
+.card-label { letter-spacing: 0.04em; margin: 0.1em 0 0.2em; }
+.card-hint { color: var(--dim); text-shadow: none; line-height: 1.1; }
+.card.selected { background: var(--amber); border-color: var(--amber); color: var(--bg); text-shadow: none; box-shadow: 0 0 1.2em rgba(255, 176, 0, 0.3); }
+.card.selected .card-key, .card.selected .card-hint { color: var(--bg); }
+button.toggle { font: inherit; text-transform: uppercase; color: var(--amber); background: transparent; cursor: pointer;
+  border: 1px solid var(--dim); padding: 0.08em 1.4ch; text-shadow: var(--glow); letter-spacing: 0.04em; }
+button.toggle::before { content: '■ '; color: var(--amber); }
+button.toggle:hover { border-color: var(--amber); background: var(--soft); }
+button.toggle.gentle { color: var(--cyan); border-color: rgba(79, 227, 255, 0.6); text-shadow: var(--cyan-glow); }
+button.toggle.gentle::before { content: '□ '; color: var(--cyan); }
+.setup-grid .note { margin-top: 0.3em; }
+.dropzone { display: flex; align-items: center; gap: 2.5ch; padding: 0.6em 2ch; min-height: 4.8em; cursor: pointer;
+  border: 1px dashed var(--dim); }
+.dropzone:hover, .dropzone.over { border-color: var(--amber); background: var(--soft); }
+.dropzone.over { border-style: solid; box-shadow: 0 0 1.2em rgba(255, 176, 0, 0.2); }
+.dropzone.has-photo { border-style: solid; }
+.drop-thumb .thumb { display: block; height: 3.6em; width: auto; max-width: 14ch; border: 1px solid var(--dim); filter: sepia(0.35); margin: 0; }
+.thumb-empty { white-space: pre; color: var(--dim); text-shadow: none; line-height: 1; }
+.drop-text { flex: 1; min-width: 0; }
+.drop-prompt { line-height: 1.2; }
+.drop-privacy { color: var(--dim); text-shadow: none; }
+.drop-status { color: var(--dim); text-shadow: none; }
+.drop-status.ok { color: var(--cyan); text-shadow: var(--cyan-glow); }
+.setup .actions { justify-content: space-between; }
+.setup-promise { text-align: left; padding-left: 10.5ch; }   /* aligned with the content column (8ch label + 2.5ch gap) */
+.setup .actions .primary { font-size: 1.35em; padding: 0.1em 2ch; }
+
+/* ---------- details (more questions) ---------- */
+.details-panel { width: min(112.5ch, 100%); font-size: 0.8em; padding-top: 1.4em; padding-bottom: 1.2em; }  /* = 90ch at 1em: same width as the setup panel */
+.details-panel .actions { margin-top: 1.1em; }
+.details-panel .keys-hint { margin-top: 0.9em; }
+.drows { display: flex; flex-direction: column; gap: 0.25em; margin-top: 1.1em; }
+.drow { display: grid; grid-template-columns: 2ch minmax(0, 1fr) 11ch 13ch 15ch 3ch; column-gap: 1.5ch; align-items: baseline;
+  padding: 0.12em 1ch; cursor: pointer; }
+.drow.focused { background: var(--soft); box-shadow: inset 0.3ch 0 0 var(--amber); }
+.drow .marker { color: var(--cyan); text-shadow: var(--cyan-glow); }
+.drow .q { line-height: 1.15; }
+.drow.k-multi .q { grid-column: 2 / 7; }   /* its options sit below: the question may use the whole row */
+.drow .q .note { display: inline; margin-left: 2ch; font-size: 1em; text-transform: uppercase; }
+.drow .lo { text-align: right; color: var(--dim); text-shadow: none; }
+.drow .hi { color: var(--dim); text-shadow: none; }
+.drow .val { text-align: right; }
+.drow.focused .lo, .drow.focused .hi { color: var(--amber); }
 .slider { white-space: pre; cursor: pointer; user-select: none; display: inline-block; }
 .slider .cell { display: inline-block; width: 1ch; text-align: center; }
-.thumb { max-width: 24ch; max-height: 9em; border: 1px solid var(--dim); margin-top: 1em; filter: sepia(0.6); }
-.row { white-space: pre; cursor: pointer; display: block; }
-.row.focused { color: var(--bg); background: var(--amber); text-shadow: none; }
-.row.focused .dim { color: var(--bg); }
-.note { color: var(--dim); text-shadow: none; white-space: normal; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.1em 2ch; }
+.chips.inline { grid-column: 3 / 7; }
+.chips.below { grid-column: 2 / 7; margin-top: 0.2em; }
+.chip { cursor: pointer; color: var(--dim); text-shadow: none; white-space: pre; padding: 0 0.5ch; }
+.chip:hover { color: var(--amber); }
+.chip.on { color: var(--amber); text-shadow: var(--glow); }
+.drow.k-choice.focused .chip.on, .chip.cursor-on { background: var(--amber); color: var(--bg); text-shadow: none; }
 
-/* breathing animation for the hit and grounding: slow (<= 0.5 Hz / <= 0.2 Hz), opacity+scale only */
+/* ---------- prepare (settle + hit) ---------- */
+.prepare { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.breath-stage { height: 12em; display: flex; align-items: center; justify-content: center; }
+.prepare .breath { width: 10em; height: 10em; margin: 0; display: flex; align-items: center; justify-content: center; }
+.breath-core { width: 55%; height: 55%; border-radius: 50%; background: radial-gradient(circle, rgba(255, 176, 0, 0.22), rgba(255, 176, 0, 0) 70%); }
+.prepare .breath.ready { transform: scale(0.8); opacity: 1; border-color: var(--cyan);
+  box-shadow: 0 0 1.2em rgba(79, 227, 255, 0.35), inset 0 0 1.2em rgba(79, 227, 255, 0.18);
+  transition: transform 1.5s ease, opacity 1.5s ease, border-color 1.5s ease, box-shadow 1.5s ease; }
+.prepare .breath.ready .breath-core { background: radial-gradient(circle, rgba(255, 176, 0, 0.45), rgba(255, 176, 0, 0) 70%); }
+.prepare .breath.inhale { animation: hs-inhale-ready 4s ease-in-out forwards; }
+@keyframes hs-inhale-ready { from { transform: scale(0.8); } to { transform: scale(1.25); } }
+.prep-copy { font-size: 1.45em; letter-spacing: 0.1em; margin-top: 0.4em; min-height: var(--lh); }
+.prepare.is-ready .prep-copy { color: var(--amber); }
+.prep-cue { color: var(--dim); text-shadow: none; min-height: var(--lh); opacity: 0; transition: opacity 0.6s ease; }
+.prep-cue.on { opacity: 1; }
+.prepare button.hit-key { margin: 0.4em 0 0; padding: 0.12em 2ch; border: 1px dashed var(--dim); color: var(--dim); text-shadow: none; }
+/* armed: the button takes the cyan of the ready ring */
+.prepare.is-ready button.hit-key { border: 1px solid var(--cyan); color: var(--cyan); text-shadow: var(--cyan-glow);
+  box-shadow: 0 0 1em rgba(79, 227, 255, 0.3), inset 0 0 0.6em rgba(79, 227, 255, 0.12); }
+.prepare.is-ready button.hit-key:hover, .prepare.is-holding button.hit-key { background: var(--cyan); color: var(--bg); text-shadow: none; }
+.prepare:not(.is-ready) button.hit-key:hover { background: transparent; color: var(--dim); cursor: default; }
+.plines { display: inline-block; text-align: left; margin-top: 0.4em; min-height: calc(3 * var(--lh)); }
+/* the lowercase pipeline detail is for the logs, not the ritual: only errors show; its line is reserved so nothing jumps */
+.prepare [data-testid="settle-detail"] { visibility: hidden; height: var(--lh); text-transform: uppercase; }
+.prepare [data-testid="settle-detail"].err { visibility: visible; }
+.prepare .prep-cue { height: var(--lh); }
+.prep-foot { position: absolute; left: 0; right: 0; bottom: 1.6em; text-align: center; }
+
+/* breathing circle (also used by grounding): slow (<= 0.2 Hz), opacity + scale only */
 .breath {
   width: 8em; height: 8em; border-radius: 50%;
   border: 0.12em solid var(--amber);
@@ -173,6 +315,7 @@ button.key:disabled { color: var(--dim); text-shadow: none; cursor: default; }
 @keyframes hs-inhale { from { transform: scale(0.6); opacity: 0.6; } to { transform: scale(1); opacity: 1; } }
 .breath.slow { animation: hs-breathe 6s ease-in-out infinite alternate; } /* 6 s in, 6 s out: 0.083 Hz */
 @keyframes hs-breathe { from { transform: scale(0.6); opacity: 0.45; } to { transform: scale(1); opacity: 0.9; } }
+
 
 /* trip */
 #trip-canvas, canvas[data-testid="trip-canvas"] { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; background: #000; }
@@ -211,10 +354,23 @@ button.key:disabled { color: var(--dim); text-shadow: none; cursor: default; }
 
 /* curve */
 .curve-wrap { position: relative; }
+.curve-axis { display: flex; justify-content: space-between; margin-top: 0.2em; }
 .curve-wrap canvas { display: block; border: 1px solid var(--dim); cursor: crosshair; touch-action: none; background: rgba(0,0,0,0.25); }
 
-/* end screen */
+/* end screen: the same centred double-frame panel as setup and safety; box, sparklines and actions share one width */
 .end .term { line-height: 1.15; }
+.end-panel { width: auto; padding: 1.9em 4ch 1.4em; }
+.end-body { width: min-content; margin: 0 auto; display: flex; flex-direction: column; }   /* as wide as the stats box */
+.end-body .stats-tail .term { padding-left: 0.5ch; }
+.end-panel .end-snaps { text-align: center; margin-top: 0.8em; }
+.end-menu { margin-top: 1.3em; display: flex; flex-direction: column; gap: 0.7em; }
+.end-actions { display: flex; gap: 2ch; }
+.end-actions button.key { margin: 0; }
+.end-actions.primary-row button.key { flex: 1; text-align: center; padding: 0.12em 1ch; }
+.end-actions.secondary-row { justify-content: space-between; padding: 0 1ch; }
+.end-status { text-align: center; min-height: var(--lh); margin-top: 0.7em; }
+.end-saved { text-align: center; color: var(--dim); text-shadow: none; font-size: 0.8em; letter-spacing: 0.06em;
+  margin-top: 0.4em; text-transform: uppercase; white-space: nowrap; }
 .spark-real { color: var(--amber); }
 .spark-you { color: var(--cyan); text-shadow: 0 0 0.12em rgba(79, 227, 255, 0.5); }
 

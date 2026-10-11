@@ -756,3 +756,66 @@ Decisions D-B11..D-B17 in NOTES.md. Changes: the surround tunnel of flat panels 
 | `GALLERY_LAYERS=breakthrough E2E_BASE_URL=http://127.0.0.1:5179 scripts/gallery.sh` | capture exit 0, checks 12/12 PASS |
 
 By eye: the real v 9 frame is vivid and cosmic (orange, gold and cyan nebula over dark mountains, a violet robed being inside gold and cyan glyph rings, frame at the screen edges) but cluttered, with beige echo sprites. The template-stack procedural v 9 frames are colourful (violet, cyan, magenta, gold spiral), with soft hazy clouds; a thin horizontal line at mid-height is still visible in v9_s11.
+
+## Front-start agent (2026-10-11): one setup screen, merged settle + hit, polished pre-trip screens
+Template stack: back end `HYPERSPACE_SESSIONS_DIR=verification/tmp/front-start/sessions HYPERSPACE_FORCE_TEMPLATES=1 HYPERSPACE_NO_IMAGES=1 uv run python -m backend.app --port 8772`, Vite `HYPERSPACE_API=http://127.0.0.1:8772 npx vite --config vite.nohmr.config.ts --port 5175 --strictPort`.
+| Command | Outcome |
+|---|---|
+| `cd frontend && npx tsc --noEmit` | clean |
+| `cd frontend && npx vitest run` | 13 files, 345 tests passed (new `tests/setup.test.ts`: 14 tests — defaults → neutral Intake with the exact schema keys, key-repeat Enter ignored, Esc → title, dose keys / arrows / click, [G] gentle toggle, [X] room, details sliders / intention / motifs / eyes / sound / mic by keyboard and mouse, Esc in details returns to setup, autofill + URL overrides, 2:1 panorama rule) |
+| `E2E_BASE_URL=http://127.0.0.1:5175 npx playwright test session screens escape gentle --reporter=line` (1st run) | 12 passed, 2 failed (gentle, session/threshold): `fillIntake` waited for 'intake' but the fast autofilled setup was already on 'hit' (NOTES D-S6) |
+| same, after the helper fix | **14 passed (7.7 min)** |
+| `node verification/tmp/front-start/shots.mjs` (copied into frontend/ to resolve playwright) | title, safety, setup, details, prepare (settling / almost / ready / holding) at 1920×1080, no page errors; inspected by eye |
+| `node verification/tmp/front-start/room.mjs` | room photo via the file input → "STORED LOCALLY · METADATA REMOVED" + thumbnail; [X] → built-in room; re-upload + BEGIN → `intake.json` room `{source: photo, image: assets/room.jpg, depth: assets/room_depth.png}` |
+Screenshots: `verification/tmp/front-start/{title,title_menu2,safety,safety_checked,setup,setup_gentle_breakthrough,setup_room,details,details_edited,prepare_settling,prepare_almost,prepare_ready,prepare_holding}.png`; screens.spec wrote `verification/gallery/screens/{title,safety,intake,intake_details,end}_{1920x1080,3840x2160}.png`. Back-end tests not run (no back-end file changed).
+
+## Report export: downloadable report with snapshots (report-export agent, 2026-10-11)
+Stack: back end 8773 (`HYPERSPACE_SESSIONS_DIR=verification/tmp/report-export/sessions HYPERSPACE_FORCE_TEMPLATES=1 HYPERSPACE_NO_IMAGES=1 uv run python -m backend.app --port 8773`), Vite 5176 (`HYPERSPACE_API=http://127.0.0.1:8773 npx vite --config vite.nohmr.config.ts --port 5176 --strictPort`). Decisions D-R1…D-R8 in NOTES.md.
+
+| Command | Result |
+|---|---|
+| `uv run pytest backend/tests/test_report_export.py -q` | 5 passed (zip members exactly report.html + md + stats.json + frames + figures, nothing private; standalone html: every `<img src>` and `url()` is a data URI, images decode; Markdown "## Snapshots" chronological with captions; report page strip ascending t_min + D/P/R/T bar; 404 before the report and for unknown ids; old sessions get the standalone file rebuilt on export) |
+| `uv run pytest backend/tests -q` | 140 passed (8 min 9 s) |
+| `cd frontend && npx tsc --noEmit` | clean |
+| `cd frontend && npx vitest run` | 13 files, 345 tests passed |
+| `E2E_BASE_URL=http://127.0.0.1:5176 HYPERSPACE_SESSIONS_DIR=verification/tmp/report-export/sessions npx playwright test report session --reporter=line` | 6 passed (6.3 min): report.spec (end screen "18 SNAPSHOTS SAVED", [D] → download `simulated-trip-report-<id>.zip` with report.html, simulated-trip-report.md, 18 frames; export.json member list = the zip; report page link/strip/keys, D key downloads) + session.spec × 4 doses |
+| same, `report` only, after the last end-screen spacing tweak | 2 passed |
+
+Measured on the timewarp-30 breakthrough session: 18 frames (5 layer entries, peak, snap_01–12 from 0:53 to 8:13), zip ≈ 58 MB (PNG frames 2–4.4 MB each), standalone report.html ≈ 6.3 MB (frames as 1600-px JPEG data URIs), report generation + standalone ≈ 1.2 s extra, zip build ≈ 0.2 s.
+Screenshots (looked at): `verification/tmp/report-export/end-screen.png`, `report-page.png` (full page), `report-page-top.png`, `report-page-strip.png`, `standalone-strip.png` (the offline file opened via file://). Fixed after looking: the stats box's right border was misaligned (VT323 has no box glyphs → HyperspaceBox font inlined), the fixed action bar overlapped the strip (now a sticky full-width strip), empty right side of the top (now an "IN THIS REPORT" index), snapshot labels of a fading breakthrough (D-R2), the snapshot line crowding the sparklines.
+
+## Fix agent (2026-10-11): UI/UX critic's round-1 fix list (pre-trip screens, end screen, report page)
+Stack: back end `HYPERSPACE_SESSIONS_DIR=verification/tmp/fix/sessions HYPERSPACE_FORCE_TEMPLATES=1 HYPERSPACE_NO_IMAGES=1 uv run python -m backend.app --port 8775`, Vite `HYPERSPACE_API=http://127.0.0.1:8775 npx vite --config vite.nohmr.config.ts --port 5178 --strictPort`. Decisions D-F1…D-F10 in NOTES.md.
+
+| Command | Outcome |
+|---|---|
+| `cd frontend && npx tsc --noEmit` | clean |
+| `cd frontend && npx vitest run` | 13 files, 345 tests passed (stats.test: axis now ` CLOCK 0:00 ─×25 15:00`, spanning the 36-cell sparklines) |
+| `uv run pytest backend/tests -q` (collected before the test update below) | 138 passed, 2 failed: `test_report_export.py::{test_export_zip_members_and_standalone_html, test_report_page_strip_and_actions}` asserted the old strip (every frame incl. the peak) |
+| `uv run pytest backend/tests/test_report_export.py -q` after updating those two assertions to D-F3 and adding `test_story_frames_drops_copies_and_relabels` | 6 passed |
+| `cd frontend && DISPLAY=:1 E2E_BASE_URL=http://127.0.0.1:5178 HYPERSPACE_SESSIONS_DIR=verification/tmp/fix/sessions npx playwright test session screens report escape gentle --reporter=line` | **16 passed (8.5 min)** (started before the last end-screen/details CSS edits) |
+| same, `screens report` only, after the last edits | **10 passed (58 s)** |
+| `node verification/tmp/fix/shots_screens.mjs pre|end <sid>|curve`, `node verification/tmp/fix/shots_report.mjs <sid>` | screenshots below, no page errors (report page: only favicon.ico 404) |
+
+Fresh breakthrough session from report.spec (`verification/tmp/fix/sessions/2026-10-11_2015`): 12 frames (5 layer entries, peak, snap_01–06 at 1:39 … 8:19), layer_enter_breakthrough at 1:24 now shows the portal/membrane (was the chrysanthemum), strip = 9 frames without the peak; export.zip 38.3 MB (was ~58–70 MB with 12 snaps; still PNG frames, export.py not changed). The judge's session re-rendered with the new html.py: 20 raw frames → strip of 12 (snap_02 = entity_0 copy dropped, 6 of the 11 late snaps kept, peak as hero only), watermark behind hero and strip, REMEMBERED vs LOGGED shows "56% MATCH" + the 11 inferred sentences instead of the 755-word story.
+Screenshots (looked at): `verification/tmp/fix/f1_{title,safety,safety_checked,setup,details,prepare_preparing,prepare_ready,end,curve,curve_drawn}.png`, `f1_report_v00…v07.png`, `f1_report_full.png`, `f1_fresh_layer_frames.png`.
+Not done (outside this agent's files): zip size (export.py), figure width/font/legend (figures.py), "three minutes of questions" template sentence (templates/setting.yaml), hash de-dup in frames.py:list_frames (GET /frames and the end-screen count still count every file).
+
+## Integration v0.2 (integrate-v02, 2026-10-11): start + report checkpoint
+Docs-only integration; no source file changed. Real server = `./run.sh --serve-only` on 8765 (qwen3:14b + SDXL-Lightning). Template stack = back end 8779 (`HYPERSPACE_SESSIONS_DIR=verification/tmp/integrate-v02/sessions HYPERSPACE_FORCE_TEMPLATES=1 HYPERSPACE_NO_IMAGES=1 uv run python -m backend.app --port 8779`) + Vite 5179 (`vite.nohmr.config.ts`). Logs: `verification/tmp/integrate-v02/`.
+
+| Check | Result |
+|---|---|
+| `cd frontend && npx tsc --noEmit` | clean (exit 0) |
+| `cd frontend && npx vitest run` | 13 files, 345/345 pass (32.6 s) |
+| `uv run pytest backend/tests -q` | 141 passed (8 min 51 s) |
+| `cd frontend && npx vite build` | ok (main 335.7 kB, pipeline 507.8 kB, css 18.8 kB) |
+| `E2E_BASE_URL=http://127.0.0.1:8765 npx playwright test session escape gentle screens report --reporter=line` (real server) | **16/16 pass (14.3 min)**; gentle: flickers [], 0 measured runs |
+| `E2E_BASE_URL=http://127.0.0.1:8765 npx playwright test safety-limiter --reporter=line` | **5/5 pass (35.8 s)**, every case flashcheck PASS |
+| Real session driven by key presses, headed Chrome 1920×1080, `/?timewarp=20` (`node verification/tmp/integrate-v02/real_flow.mjs`) | title Enter → safety Space+Enter → setup Enter (strong, defaults) → ready **41.0 s** → hold Space 4 s → trip 4.4 min → grounding → curve drawn with the mouse → end screen "8 SNAPSHOTS SAVED" → `D` → `simulated-trip-report-2026-10-11_2044.zip` in 12.2 s, **24,918,366 bytes, 14 members** (report.html, simulated-trip-report.md, stats.json, frames/ ×8, figures/ ×3); report provenance `llm`, 634 words; 0 page errors; total 427 s |
+| `WORSTCASE_LAYERS=breakthrough WORSTCASE_SECONDS=20 E2E_BASE_URL=http://127.0.0.1:5179 scripts/worstcase_flash.sh` | **1 pass, 1 FAIL**. breakthrough PASS: max 1.0 flash/s, 0 red, 0 pattern frames (max area 0.188), max mean L 0.188, limiter engaged 1×. **sweep (0→10→0 in 20 s) FAIL: 3 frames with a high-contrast periodic pattern > 25 % of the screen** (max area 0.281, periodic contrast 0.974); flashes 1.0/s, 0 red |
+| same 20 s run against the HEAD (v0.1) front end + HEAD tests (scratch `git archive`, Vite 5178) | breakthrough PASS; **sweep FAIL, 2 pattern frames** (max area 0.281), so the failure is pre-existing (NOTES D-I19) |
+| `WORSTCASE_LAYERS=breakthrough E2E_BASE_URL=http://127.0.0.1:5179 scripts/worstcase_flash.sh` (protected 60 s default) | **2/2 PASS**: breakthrough 62.0 s, sweep 63.3 s; max 1.0 flash/s, 0 red, 0 pattern frames (max area 0.188), limiter engaged 1× each |
+
+Screenshots (looked at): `verification/gallery/setup_real.png`, `verification/gallery/end_real.png`, `verification/gallery/report_real.png` (full page, 1905×6622), plus `verification/tmp/integrate-v02/curve_result.png` and `end_after_download.png`. Downloaded zip: `verification/tmp/integrate-v02/real_2026-10-11_2044.zip`.
+By eye: the setup screen is clean and readable (four dose cards, the mode toggle, the room drop zone, an inverted [ENTER] BEGIN). The end screen is one centred panel with two primary buttons. On the report page the hero peak frame is vivid (violet and blue hyperbolic flower), but two of the six strip frames are dull room shots and one is a flat violet field. The text quotes a message that was never shown, and the deepest-layer labels disagree with what the frames show (NOTES integrate-v02 open items).

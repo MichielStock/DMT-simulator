@@ -1,7 +1,7 @@
 // The hit (BUILD.md section 8.4) and repeat hits during the trip (section 7.5).
 // Hold space (or the on-screen button) for up to 4 s: hold_fraction = min(1, held / 4).
 
-import { h, onKey, screen } from './dom';
+import { onKey } from './dom';
 
 export const HOLD_MAX_S = 4;
 export const MAX_REPEAT_HITS = 3;
@@ -29,21 +29,27 @@ class Hold {
 
 export const holdFraction = (heldS: number) => Math.max(0, Math.min(1, heldS / HOLD_MAX_S));
 
-export function mountHit(root: HTMLElement): Promise<HitResult> {
-  const el = screen(root, 'hit');
-  const text = h('div', { class: 'term center', 'data-testid': 'hit-text' }, 'Hold space to inhale.');
-  const breath = h('div', { class: 'breath' });
-  const btn = h('button', { class: 'key', 'data-testid': 'hit-button' }, '[SPACE] HOLD TO INHALE');
-  el.appendChild(h('div', { class: 'col center' }, text, breath, btn));
-  const hold = new Hold();
+export interface HitHooks {
+  /** false while the session is still being prepared: Space then only triggers `onEarly` */
+  armed: () => boolean;
+  onEarly: () => void;
+  /** the hold started (Space down or pointer down on `btn`) */
+  onBegin: () => void;
+}
 
+/** The hold logic of the hit, bound to Space and to the on-screen button `btn`.
+ *  Resolves once with hold_fraction = min(1, held / 4) when Space / the pointer is released or 4 s pass.
+ *  Key handlers are screen handlers (removed when the next screen mounts). */
+export function bindHit(btn: HTMLElement, hooks: HitHooks): Promise<HitResult> {
+  const hold = new Hold();
   return new Promise((resolve) => {
     let timer: ReturnType<typeof setTimeout> | null = null;
     let finished = false;
     const begin = () => {
-      if (finished || !hold.start()) return;
-      text.textContent = 'Hold…';
-      breath.classList.add('inhale');
+      if (finished) return;
+      if (!hooks.armed()) { hooks.onEarly(); return; }
+      if (!hold.start()) return;
+      hooks.onBegin();
       timer = setTimeout(end, HOLD_MAX_S * 1000);
     };
     const end = () => {
@@ -55,11 +61,10 @@ export function mountHit(root: HTMLElement): Promise<HitResult> {
       offUp();
       resolve({ heldS, holdFraction: holdFraction(heldS) });
     };
-    const up = (e: KeyboardEvent) => { if (e.key === ' ') end(); };
     const off = onKey((e) => {
       if (e.key === ' ') { e.preventDefault(); if (!e.repeat) begin(); }
     });
-    const offUp = onKey(up, 'keyup');
+    const offUp = onKey((e) => { if (e.key === ' ') end(); }, 'keyup');
     btn.addEventListener('pointerdown', (e) => { e.preventDefault(); begin(); });
     btn.addEventListener('pointerup', end);
     btn.addEventListener('pointerleave', end);

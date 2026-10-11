@@ -24,7 +24,7 @@ socket_guard.install()
 
 import fastapi  # noqa: E402
 from fastapi import Body, FastAPI, File, Form, HTTPException, UploadFile  # noqa: E402
-from fastapi.responses import HTMLResponse, JSONResponse  # noqa: E402
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 from starlette.concurrency import run_in_threadpool  # noqa: E402
 
@@ -32,6 +32,8 @@ from backend import assets as assets_mod  # noqa: E402
 from backend import llm  # noqa: E402
 from backend.planner import expand as expand_mod  # noqa: E402
 from backend.planner.sampler import sample_skeleton  # noqa: E402
+from backend.report import export as export_mod  # noqa: E402
+from backend.report import frames as frames_mod  # noqa: E402
 from backend.report import pipeline  # noqa: E402
 
 log = logging.getLogger("hyperspace")
@@ -330,7 +332,26 @@ def create_app() -> FastAPI:
             raise HTTPException(422, "not a PNG")
         (sdir / "frames").mkdir(exist_ok=True)
         (sdir / "frames" / f"{name}.png").write_bytes(data)
+        # sidecar with the capture time and the deepest layer (captions; the event log has the same data)
+        meta = {}
+        try:
+            if body.get("t_min") is not None:
+                meta["t_min"] = round(float(body["t_min"]), 4)
+        except (TypeError, ValueError):
+            pass
+        layer = NAME_RE.sub("_", str(body.get("layer") or ""))[:40]
+        if layer:
+            meta["layer"] = layer
+        with _lock:
+            side = frames_mod.read_sidecar(sdir)
+            side[name] = meta
+            _write_json(sdir / frames_mod.SIDECAR, side)
         return {"path": f"frames/{name}.png"}
+
+    @app.get("/api/session/{sid}/frames")
+    def frames(sid: str):
+        sdir = session_path(sid)
+        return frames_mod.list_frames(sdir, pipeline.load_events(sdir))
 
     @app.post("/api/session/{sid}/curve")
     def curve(sid: str, body: dict = Body(...)):
@@ -368,6 +389,28 @@ def create_app() -> FastAPI:
                 return {"stage": "done" if done else "memory", "done": done,
                         "report_html": f"/sessions/{sid}/report.html" if done else None, "error": None}
             return dict(r)
+
+    def _reported(sid: str) -> Path:
+        sdir = session_path(sid)
+        with _lock:
+            r = _reports.get(sid)
+            busy = r is not None and not r.get("done")
+        if busy or not (sdir / "report.html").exists():
+            raise HTTPException(404, "the report is not ready")
+        return sdir
+
+    @app.get("/api/session/{sid}/export.zip")
+    def export_zip(sid: str):
+        sdir = _reported(sid)
+        z = export_mod.build_zip(sdir, sid)
+        return FileResponse(z, media_type="application/zip", filename=export_mod.zip_name(sid))
+
+    @app.get("/api/session/{sid}/export.json")
+    def export_json(sid: str):
+        sdir = _reported(sid)
+        z = export_mod.build_zip(sdir, sid)
+        return {"filename": export_mod.zip_name(sid), "url": f"/api/session/{sid}/export.zip",
+                "size": z.stat().st_size, "members": export_mod.listing(z)}
 
     @app.get("/api/session/{sid}/stats")
     def stats(sid: str):

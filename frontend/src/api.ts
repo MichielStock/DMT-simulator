@@ -106,6 +106,19 @@ export interface Stats {
   sparkline_real: string; sparkline_you: string; box: string[];
 }
 
+/** One captured frame (GET /session/{id}/frames), chronological. */
+export interface FrameInfo {
+  name: string;
+  file: string;
+  path: string;            // relative to the session folder, e.g. frames/snap_01.png
+  t_min: number | null;
+  layer: string | null;
+  kind: 'snapshot' | 'layer' | 'peak' | 'being' | 'message' | 'other';
+  caption: string;         // "m:ss · what"
+}
+
+export interface ExportInfo { filename: string; url: string; size: number; members: { name: string; size: number }[] }
+
 export interface ReportStatus { stage: string; done: boolean; report_html: string | null; error: string | null }
 
 export interface Replay {
@@ -133,8 +146,10 @@ export const api = {
   progress: (id: string) => req<Progress>('GET', `${s(id)}/progress`),
   tripScript: (id: string) => req<TripScript>('GET', `${s(id)}/trip_script`),
   events: (id: string, events: LoggedEvent[]) => req<{ count: number }>('POST', `${s(id)}/events`, { events }),
-  frame: (id: string, name: string, t_min: number, png_base64: string) =>
-    req<{ path: string }>('POST', `${s(id)}/frame`, { name, t_min, png_base64 }),
+  frame: (id: string, name: string, t_min: number, png_base64: string, layer?: string) =>
+    req<{ path: string }>('POST', `${s(id)}/frame`, { name, t_min, png_base64, layer }),
+  frames: (id: string) => req<FrameInfo[]>('GET', `${s(id)}/frames`),
+  exportInfo: (id: string) => req<ExportInfo>('GET', `${s(id)}/export.json`),
   curve: (id: string, points: [number, number][]) => req<{ ok: boolean }>('POST', `${s(id)}/curve`, { points }),
   finish: (id: string) => req<{ started: boolean }>('POST', `${s(id)}/finish`, {}),
   reportStatus: (id: string) => req<ReportStatus>('GET', `${s(id)}/report_status`),
@@ -148,4 +163,9 @@ export function sessionAssetUrl(id: string, rel: string): string {
 
 export function reportUrl(id: string): string {
   return sessionAssetUrl(id, 'report.html');
+}
+
+/** The downloadable report (standalone report.html, Markdown, frames, figures, stats) as one zip. */
+export function exportZipUrl(id: string): string {
+  return `${BASE}${s(id)}/export.zip`;
 }

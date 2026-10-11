@@ -1,4 +1,4 @@
-// Retro screen captures (BUILD.md 16.2): title, safety, one intake screen and the end screen at
+// Retro screen captures (BUILD.md 16.2): title, safety, the setup screen (+ details) and the end screen at
 // 1920x1080 and 3840x2160 into verification/gallery/screens/.
 import { expect, test, type Page } from '@playwright/test';
 import * as fs from 'node:fs';
@@ -57,10 +57,12 @@ for (const size of SIZES) {
       await page.goto('/?autostart=1');
       await acceptSafety(page);
       await waitForScreen(page, 'intake');
-      await page.keyboard.press('3');
-      await page.keyboard.press('Enter'); // screen 2: a slider
-      await expect(page.getByTestId('intake-slider')).toBeVisible();
+      await expect(page.getByTestId('setup-screen')).toBeVisible();
+      await expect(page.getByTestId('intake-option-strong')).toHaveClass(/selected/);
       await shot(page, 'intake', size);
+      await page.keyboard.press('d'); // the optional details sub-screen
+      await expect(page.getByTestId('intake-slider-clarity')).toBeVisible();
+      await shot(page, 'intake_details', size);
     });
 
     test('end screen', async ({ page }) => {

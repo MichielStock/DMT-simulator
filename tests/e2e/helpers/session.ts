@@ -74,51 +74,51 @@ export interface IntakeOverrides {
 }
 
 /**
- * Complete the intake. With ?autofill the screens advance on their own; we only wait for them.
- * Without autofill, `overrides` are entered with the keyboard, screen by screen.
+ * Complete the setup screen (NOTES D-S1: one screen + an optional details sub-screen; the screen name
+ * stays 'intake'). With ?autofill it begins on its own; we only wait for it. Without autofill,
+ * `overrides` are entered with the keyboard: [1]-[4] dose, [G] gentle, [D] details, [ENTER] begin.
  */
 export async function fillIntake(page: Page, overrides: IntakeOverrides | null = null, timeout = 60_000): Promise<void> {
+  if (!overrides) {
+    // an autofilled setup begins ~50 ms after it appears, and on the template stack the session can be
+    // prepared before the next poll: any later pre-trip screen means the setup is done
+    await waitForScreen(page, ['intake', 'settle', 'hit', 'trip'], 30_000);
+    await expect.poll(() => currentScreen(page), { timeout }).not.toBe('intake');
+    return;
+  }
   await waitForScreen(page, 'intake', 30_000);
-  if (overrides) {
+  {
     const o = overrides;
-    const next = () => page.keyboard.press('Enter');
-    const step = async (n: number) => expect(page.locator(`[data-screen=intake][data-step="${n}"]`)).toBeVisible();
-    const slider = async (n: number, v: number | undefined, min: number) => {
-      await step(n);
-      if (v !== undefined) {
-        // number keys set min + digit; arrows reach the top of the scale
+    await expect(page.getByTestId('setup-screen')).toBeVisible();
+    const DOSES: DoseStep[] = ['threshold', 'light', 'strong', 'breakthrough'];
+    if (o.dose) await page.keyboard.press(String(DOSES.indexOf(o.dose) + 1));
+    if (o.difficult === false) await page.keyboard.press('g');
+    const sliders: [number | undefined, number][] = [
+      [o.clarity, 0], [o.set, -5], [o.absorption?.[0], 0], [o.absorption?.[1], 0], [o.absorption?.[2], 0], [o.surrender, 0],
+    ];
+    if (sliders.some(([v]) => v !== undefined) || o.intention || o.expectations?.length) {
+      await page.keyboard.press('d');
+      await expect(page.getByTestId('details-screen')).toBeVisible();
+      // rows start focused on the first slider; ↓ moves, digits set min + digit, → steps further
+      for (const [i, [v, min]] of sliders.entries()) {
+        if (i > 0) await page.keyboard.press('ArrowDown');
+        if (v === undefined) continue;
         const k = Math.min(9, v - min);
         await page.keyboard.press(String(k));
-        for (let i = k; i < v - min; i++) await page.keyboard.press('ArrowRight');
+        for (let j = k; j < v - min; j++) await page.keyboard.press('ArrowRight');
       }
-      await next();
-    };
-    await step(1);
-    await page.keyboard.press('3'); // default room
-    await next();
-    await slider(2, o.clarity, 0);
-    await slider(3, o.set, -5);
-    await slider(4, o.absorption?.[0], 0);
-    await slider(5, o.absorption?.[1], 0);
-    await slider(6, o.absorption?.[2], 0);
-    await slider(7, o.surrender, 0);
-    await step(8);
-    if (o.intention) await page.getByTestId(`intake-option-${o.intention}`).click();
-    await next();
-    await step(9);
-    for (const e of o.expectations ?? []) await page.getByTestId(`intake-option-${e}`).click();
-    await next();
-    await step(10);
-    if (o.dose) await page.getByTestId(`intake-option-${o.dose}`).click();
-    await next();
-    await step(11);
-    if (o.difficult === false) await page.getByTestId('intake-option-difficult').click();
-    await next();
+      if (o.intention) await page.getByTestId(`intake-option-${o.intention}`).click();
+      for (const e of o.expectations ?? []) await page.getByTestId(`intake-option-${e}`).click();
+      await page.keyboard.press('Enter'); // back to setup
+      await expect(page.getByTestId('setup-screen')).toBeVisible();
+    }
+    await page.keyboard.press('Enter'); // begin
   }
   await expect.poll(() => currentScreen(page), { timeout }).not.toBe('intake');
 }
 
-/** Wait for the settling screen to finish (assets ready and models unloaded): the hit screen. */
+/** Wait until the session is prepared (assets ready and models unloaded): the prepare screen switches
+ *  from 'settle' to 'hit' on the same DOM (NOTES D-S2). */
 export async function waitReady(page: Page, timeout = 5 * 60_000): Promise<void> {
   await waitForScreen(page, 'hit', timeout);
 }

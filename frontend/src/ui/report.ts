@@ -1,7 +1,7 @@
-// Opening the report from the end screen: poll /report_status until done, then open
-// /sessions/<id>/report.html in the same tab.
+// Opening (or downloading) the report from the end screen: poll /report_status until done, then open
+// /sessions/<id>/report.html in the same tab, or fetch the export zip (a download: the page stays).
 
-import { api, reportUrl } from '../api';
+import { api, exportZipUrl, reportUrl } from '../api';
 import { sleep } from './dom';
 
 export async function waitForReport(id: string, onStage: (stage: string) => void, pollMs = 1000, maxMs = 15 * 60_000): Promise<string | null> {
@@ -24,5 +24,13 @@ export async function openReport(id: string, onStage: (stage: string) => void): 
   const url = await waitForReport(id, onStage);
   if (!url) return false;
   window.location.assign(url);
+  return true;
+}
+
+/** Wait for the report, then download the zip (Content-Disposition: attachment, so the page stays). */
+export async function downloadReport(id: string, onStage: (stage: string) => void): Promise<boolean> {
+  const url = await waitForReport(id, onStage);
+  if (!url) return false;
+  window.location.assign(exportZipUrl(id));
   return true;
 }

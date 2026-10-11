@@ -47,7 +47,10 @@ describe('stats box', () => {
     const you = root.querySelector('.spark-you')!;
     expect(real.textContent).toBe(STATS.sparkline_real);
     expect(you.textContent).toBe(STATS.sparkline_you);
-    expect(root.textContent).toContain(' INTENSITY  0:00 ────────────────────── 15:00');
+    // the axis spans exactly the 36-cell sparklines: 7-column prefix, 0:00 at their start, 15:00 at their end
+    expect(root.textContent).toContain(' CLOCK 0:00 ' + '─'.repeat(25) + ' 15:00');
+    const axis = [...root.querySelectorAll('.term')].map((e) => e.textContent ?? '').find((t) => t.startsWith(' CLOCK'))!;
+    expect([...axis].length).toBe(7 + [...STATS.sparkline_real!].length);
     expect(root.textContent).toContain(' REAL  ▁▄▇');
     expect(root.textContent).toContain(' YOU   ▁▆█');
     expect(root.textContent).not.toContain('ENDED EARLY');

@@ -25,18 +25,20 @@ export const ABOUT_TEXT: { title: string; lines: string[] }[] = [
 
 export function mountAbout(root: HTMLElement): Promise<void> {
   const el = screen(root, 'about');
-  const col = h('div', { class: 'wide' }, h('h1', {}, 'ABOUT HYPERSPACE'));
+  const panel = h('div', { class: 'panel about-panel' }, h('h1', { class: 'panel-title' }, ' ABOUT HYPERSPACE '));
   for (const sec of ABOUT_TEXT) {
-    col.appendChild(h('div', { class: 'accent' }, sec.title));
-    for (const l of sec.lines) col.appendChild(h('p', { style: 'margin:0 0 0.4em 0' }, l));
-    col.appendChild(h('div', { style: 'height:0.6em' }));
+    const body = h('div', { class: 'about-body' });
+    for (const l of sec.lines) body.appendChild(h('p', {}, l));
+    panel.appendChild(h('section', { class: 'about-sec' }, h('div', { class: 'accent about-head' }, sec.title), body));
   }
-  col.appendChild(h('div', { class: 'term' }, '[ESC] TITLE'));
-  el.appendChild(col);
+  panel.appendChild(h('div', { class: 'actions' }, h('button', { class: 'key primary', onclick: () => close() }, '[ESC] TITLE')));
+  el.appendChild(panel);
+  let close = () => {};
   return new Promise((resolve) => {
     const off = onKey((e) => {
-      if (['Escape', 'Enter', 'Backspace'].includes(e.key) || e.key.toLowerCase() === 't') { off(); resolve(); }
+      if (['Escape', 'Enter', 'Backspace'].includes(e.key) || e.key.toLowerCase() === 't') close();
     });
-    el.addEventListener('click', () => { off(); resolve(); });
+    close = () => { off(); resolve(); };
+    el.addEventListener('click', () => close());
   });
 }

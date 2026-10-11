@@ -32,16 +32,16 @@ import { createBreakthroughLayer } from './layers/breakthrough';
 import { createAudio, type HyperspaceAudio } from './audio';
 import { mountTitle } from './ui/title';
 import { mountSafety } from './ui/safetyScreen';
-import { mountIntake } from './ui/intake';
-import { mountSettle } from './ui/settle';
-import { mountHit, RepeatHits, type HitResult } from './ui/hit';
+import { mountSetup } from './ui/setup';
+import { mountPrepare } from './ui/prepare';
+import { RepeatHits, type HitResult } from './ui/hit';
 import { Hud } from './ui/hud';
 import { mountGrounding } from './ui/grounding';
 import { mountCurve } from './ui/curveDraw';
 import { mountEnd } from './ui/endScreen';
 import { mountPastSessions } from './ui/pastSessions';
 import { mountAbout } from './ui/about';
-import { clearScreenHandlers, h, onKey, params, screen } from './ui/dom';
+import { h, onKey, params, screen } from './ui/dom';
 
 // ---------------------------------------------------------------------------------------------
 // configuration
@@ -227,20 +227,13 @@ const root = document.getElementById('app') as HTMLElement;
 // ---------------------------------------------------------------------------------------------
 // screens helpers
 
-/** Resolve with 'escape' if Escape is pressed before `p` resolves (pre-trip screens). */
-function escapable<T>(p: Promise<T>): Promise<T | 'escape'> {
-  return new Promise((resolve) => {
-    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') { cleanup(); clearScreenHandlers(); resolve('escape'); } };
-    const cleanup = () => window.removeEventListener('keydown', onEsc);
-    window.addEventListener('keydown', onEsc);
-    p.then((v) => { cleanup(); resolve(v); });
-  });
-}
-
 function messageScreen(name: string, lines: string[], hint = '[ENTER] TITLE'): Promise<void> {
   setScreen(name);
   const el = screen(root, name);
-  el.appendChild(h('div', { class: 'col' }, ...lines.map((l) => h('p', {}, l)), h('div', { class: 'term' }, hint)));
+  el.appendChild(h('div', { class: 'panel message-panel' },
+    h('div', { class: 'panel-title' }, name === 'error' ? ' HMM. ' : ' NOTE '),
+    ...lines.map((l) => h('p', {}, l)),
+    h('div', { class: 'actions' }, h('button', { class: 'key primary' }, hint))));
   return new Promise((resolve) => {
     const off = onKey((e) => { if (e.key === 'Enter' || e.key === 'Escape') { off(); resolve(); } });
     el.addEventListener('click', () => { off(); resolve(); });
@@ -321,7 +314,10 @@ class Trip {
   private quality: AdaptiveQuality | null = null;
   private lw: LayerWeights | null = null;      // raw windows (hysteresis + latch)
   private shown: LayerWeights | null = null;   // after time-based fades (what is drawn)
-  private pendingCaptures: string[] = [];
+  private pendingEnters: WeightKey[] = [];     // layer_enter frames waiting until the layer is really on screen
+  private lastCaptureT: number | null = null;  // model minute of the latest frame capture
+  private snapCount = 0;                       // periodic snapshots taken (snap_01 …)
+  private nextSnapT: number | null = null;     // model minute of the next periodic snapshot
   private active = new Set<WeightKey>();
   private captured = new Set<string>();
   private maxV = 0;
@@ -604,7 +600,32 @@ class Trip {
       hs.renderStats = { frameMs: this.quality?.ema ?? 0, renderScale: this.pipeline.renderScale, frames: this.framesRendered };
       hs.readyForCapture = this.framesRendered >= 3 && pendingLoads === 0 && this.layersReady() && this.weightsSettled();
     }
-    for (const name of this.pendingCaptures.splice(0)) this.capture(name);
+    // layer_enter frames wait until the layer's drawn weight is ≥ 0.5, so the picture shows that layer
+    // (NOTES D-F2); a layer that leaves again before that gets no frame
+    if (this.pendingEnters.length && this.shown) {
+      const shown = this.shown;
+      this.pendingEnters = this.pendingEnters.filter((k) => {
+        if (!this.active.has(k)) return false;
+        if ((k === 'room' ? shown.roomDistortion : shown[k]) < Trip.SNAP.enterWeight) return true;
+        this.capture(`layer_enter_${LAYER_NAMES[k]}`);
+        return false;
+      });
+    }
+
+    // ---- periodic snapshots for the report: at most 6, every 80 model-seconds while visual ≥ 0.8 (so they
+    //      span the arc), never within 15 model-s of another capture (a due snap waits), never in scrub mode ----
+    if (!this.opts.scrub && this.snapCount < Trip.SNAP.max && v >= Trip.SNAP.minV) {
+      if (this.nextSnapT === null) this.nextSnapT = t + Trip.SNAP.everyS / 60;
+      else if (t >= this.nextSnapT) {
+        const gapMin = Trip.SNAP.minGapS / 60;
+        if (this.lastCaptureT !== null && t - this.lastCaptureT < gapMin) this.nextSnapT = this.lastCaptureT + gapMin;
+        else {
+          this.snapCount++;
+          this.nextSnapT = t + Trip.SNAP.everyS / 60;
+          this.capture(`snap_${String(this.snapCount).padStart(2, '0')}`);
+        }
+      }
+    }
 
     // ---- peak frame: first moment the visual intensity falls from its maximum ----
     if (v > this.maxV) this.maxV = v;
@@ -692,7 +713,7 @@ class Trip {
       if (present < LIMITS.enterThreshold && forcedLayer !== k) continue; // already replaced by a deeper layer
       this.active.add(k);
       this.events.log('layer_enter', { layer: LAYER_NAMES[k] });
-      this.pendingCaptures.push(`layer_enter_${LAYER_NAMES[k]}`);
+      this.pendingEnters.push(k);
     }
   }
 
@@ -714,12 +735,33 @@ class Trip {
     if (this.captured.has(name) || !this.pipeline || !this.sessionId || !this.opts.post) return;
     this.captured.add(name);
     const tMin = this.model.tMin;
+    this.lastCaptureT = tMin;
     const id = this.sessionId;
+    const layer = this.deepestShownLayer();
     this.pipeline.captureFrame().then(async (blob) => {
       const b64 = await blobToBase64(blob);
-      const r = await api.frame(id, name, round3(tMin), b64);
-      this.events.log('frame_captured', { name, path: r.path }, tMin);
+      const r = await api.frame(id, name, round3(tMin), b64, layer);
+      this.events.log('frame_captured', { name, path: r.path, layer }, tMin);
     }).catch((e) => console.warn('frame capture failed', e));
+  }
+
+  /** Report snapshots: periodic snap_01 … every `everyS` model-seconds while visual ≥ `minV` (at most `max`,
+   *  never within `minGapS` of another capture); layer_enter_* once the layer's drawn weight ≥ `enterWeight`. */
+  private static readonly SNAP = { everyS: 80, minV: 0.8, max: 6, minGapS: 15, enterWeight: 0.5 } as const;
+
+  /** The deepest layer on screen right now, for captions ("2:10 · chrysanthemum"): the deepest
+   *  entered layer whose drawn weight is at least 0.3 (deeper layers draw over shallower ones, so
+   *  that is what the picture shows); the room when none is. (A plain "highest weight" would almost
+   *  always say room, whose weight is 1 until the waiting room replaces it, and would call a fading
+   *  but still dominant breakthrough "chrysanthemum".) */
+  private deepestShownLayer(): string {
+    let best: WeightKey = 'room';
+    if (this.shown) {
+      for (const k of WEIGHT_KEYS) {
+        if (k !== 'room' && this.active.has(k) && this.shown[k] >= 0.3) best = k;
+      }
+    }
+    return LAYER_NAMES[best];
   }
 
   private cue(text: string, ms: number): void {
@@ -850,8 +892,8 @@ async function sessionFlow(): Promise<'new' | 'title'> {
   }
   intake.seed = seed;
   setScreen('intake');
-  const ir = await escapable(mountIntake(root, { sessionId, intake, autofill: !!CFG.autofill }));
-  if (ir === 'escape') return 'title';
+  const ir = await mountSetup(root, { sessionId, intake, autofill: !!CFG.autofill });
+  if (ir === 'title') return 'title';
   intake = ir;
   intake.hold_fraction = 1; // the planner predicts for a full hold; the real fraction is logged at the hit
   if (sessionId) {
@@ -861,20 +903,17 @@ async function sessionFlow(): Promise<'new' | 'title'> {
     }
   }
 
-  // settle
+  // settle + hit on one screen (NOTES D-S2): 'settle' while preparing, 'hit' once armed
   setScreen('settle');
-  const sr = await mountSettle(root, sessionId);
-  if (sr === 'cancel') return 'title';
-  if (sr === 'error') { await messageScreen('error', ['SOMETHING WENT WRONG WHILE PREPARING THE SESSION.']); return 'title'; }
-  let script: TripScript;
-  try { script = sessionId ? await api.tripScript(sessionId) : offlineTripScript(intake); } catch {
-    script = offlineTripScript(intake);
-  }
-
-  // hit
-  setScreen('hit');
-  const hit = await escapable(mountHit(root));
-  if (hit === 'escape') return 'title';
+  let scriptP: Promise<TripScript> | null = null;
+  const loadScript = (): Promise<TripScript> => (sessionId ? api.tripScript(sessionId) : Promise.resolve(offlineTripScript(intake)))
+    .catch(() => offlineTripScript(intake));
+  const hit = await mountPrepare(root, sessionId, {
+    onReady: () => { setScreen('hit'); scriptP = loadScript(); },
+  });
+  if (hit === 'cancel') return 'title';
+  if (hit === 'error') { await messageScreen('error', ['SOMETHING WENT WRONG WHILE PREPARING THE SESSION.']); return 'title'; }
+  const script: TripScript = await (scriptP ?? loadScript());
 
   // trip
   createSessionAudio(intake);

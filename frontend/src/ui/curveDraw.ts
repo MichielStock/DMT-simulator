@@ -35,6 +35,8 @@ function signed(minutes: number): string {
   return (minutes < 0 ? '−' : '+') + fmtMs(Math.abs(minutes));
 }
 
+const PADL_CSS = 44, PADR_CSS = 8;   // plot padding in CSS px (room for the y labels on the left)
+
 export function mountCurve(root: HTMLElement, ctx: CurveCtx): Promise<[number, number][]> {
   const el = screen(root, 'curve');
   const endMin = Math.max(0.5, ctx.endMin);
@@ -50,7 +52,9 @@ export function mountCurve(root: HTMLElement, ctx: CurveCtx): Promise<[number, n
   el.appendChild(h('div', {},
     h('h1', {}, CURVE_PROMPT.toUpperCase()),
     h('div', { class: 'curve-wrap' }, canvas),
-    h('div', { class: 'term dim' }, `0:00${' '.repeat(20)}TIME SINCE THE HIT${' '.repeat(20)}${fmtMs(endMin)}`),
+    // time axis under the plot: 0:00 at the plot's left edge, the end time at its right edge (NOTES D-F12)
+    h('div', { class: 'term dim curve-axis', style: `width:${cssW}px;padding-left:${PADL_CSS}px;padding-right:${PADR_CSS}px` },
+      h('span', {}, '0:00'), h('span', {}, 'TIME SINCE THE HIT'), h('span', {}, fmtMs(endMin))),
     h('div', { class: 'gap' }),
     h('div', {}, done, clear),
     h('div', { class: 'gap' }),
@@ -58,7 +62,7 @@ export function mountCurve(root: HTMLElement, ctx: CurveCtx): Promise<[number, n
   ));
 
   const g = canvas.getContext('2d')!;
-  const PADL = 40 * dpr, PADB = 8 * dpr, PADT = 8 * dpr, PADR = 8 * dpr;
+  const PADL = PADL_CSS * dpr, PADB = 10 * dpr, PADT = 14 * dpr, PADR = PADR_CSS * dpr;
   const W = canvas.width, H = canvas.height;
   const xOf = (t: number) => PADL + (t / endMin) * (W - PADL - PADR);
   const yOf = (v: number) => H - PADB - (v / 10) * (H - PADB - PADT);
@@ -73,12 +77,12 @@ export function mountCurve(root: HTMLElement, ctx: CurveCtx): Promise<[number, n
 
   const draw = () => {
     g.clearRect(0, 0, W, H);
-    g.font = `${16 * dpr}px VT323, monospace`;
+    g.font = `${26 * dpr}px VT323, monospace`;
     g.fillStyle = '#7a5400';
     g.strokeStyle = 'rgba(122,84,0,0.5)';
     g.lineWidth = 1;
     for (const v of [0, 2, 4, 6, 8, 10]) {
-      g.fillText(String(v), 6 * dpr, yOf(v) + 5 * dpr);
+      g.fillText(String(v), 8 * dpr, yOf(v) + 7 * dpr);
       g.beginPath(); g.moveTo(PADL, yOf(v)); g.lineTo(W - PADR, yOf(v)); g.stroke();
     }
     if (real) {

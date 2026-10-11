@@ -29,22 +29,25 @@ function createAudioContext(): void {
 export function mountSafety(root: HTMLElement): Promise<SafetyResult> {
   const el = screen(root, 'safety');
   const input = h('input', { type: 'checkbox', 'data-testid': 'safety-checkbox', id: 'safety-checkbox' }) as HTMLInputElement;
-  const cont = h('button', { class: 'key', 'data-testid': 'safety-continue', disabled: true }, '[ENTER] Continue') as HTMLButtonElement;
-  const exit = h('button', { class: 'key', 'data-testid': 'safety-exit' }, '[ESC] Exit') as HTMLButtonElement;
+  const cont = h('button', { class: 'key primary', 'data-testid': 'safety-continue', disabled: true }, '[ENTER] CONTINUE') as HTMLButtonElement;
+  const exit = h('button', { class: 'key', 'data-testid': 'safety-exit' }, '[ESC] EXIT') as HTMLButtonElement;
 
   el.appendChild(
-    h('div', { class: 'col' },
-      h('h1', {}, SAFETY_TITLE.toUpperCase()),
+    h('div', { class: 'panel safety-panel' },
+      h('h1', { class: 'panel-title' }, ` ${SAFETY_TITLE.toUpperCase()} `),
       ...SAFETY_PARAGRAPHS.map((p) => h('p', {}, p)),
-      h('label', { class: 'check', for: 'safety-checkbox' }, input, h('span', { class: 'box' }), ' ', SAFETY_CHECKBOX, h('span', { class: 'dim' }, '  [SPACE]')),
-      h('div', { class: 'gap' }),
-      h('div', {}, cont, exit),
+      h('label', { class: 'check', for: 'safety-checkbox', 'data-testid': 'safety-check-line' },
+        input, h('span', { class: 'box' }), h('span', { class: 'check-text' }, SAFETY_CHECKBOX), h('span', { class: 'check-key' }, '[SPACE]')),
+      h('div', { class: 'actions' }, cont, exit),
     ),
   );
 
   return new Promise((resolve) => {
     let off = () => {};
-    const sync = () => { cont.disabled = !input.checked; };
+    const sync = () => {
+      cont.disabled = !input.checked;
+      el.classList.toggle('checked', input.checked);
+    };
     input.addEventListener('change', sync);
     const doContinue = () => {
       if (!input.checked) return;
@@ -57,7 +60,7 @@ export function mountSafety(root: HTMLElement): Promise<SafetyResult> {
     exit.addEventListener('click', doExit);
     off = onKey((e) => {
       if (e.key === ' ' && document.activeElement !== input) { input.checked = !input.checked; sync(); e.preventDefault(); }
-      else if (e.key === 'Enter') { e.preventDefault(); doContinue(); }
+      else if (e.key === 'Enter') { e.preventDefault(); if (!e.repeat) doContinue(); }
       else if (e.key === 'Escape') doExit();
     });
   });
