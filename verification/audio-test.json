@@ -12,16 +12,16 @@
   "results": {
     "max": {
       "seconds": 20,
-      "peakDbfs": -5,
-      "maxRiseDb200ms": 9.43,
-      "riseAtS": 3.09,
-      "rmsDbfs": -20.24,
+      "peakDbfs": -5.92,
+      "maxRiseDb200ms": 8.44,
+      "riseAtS": 2.56,
+      "rmsDbfs": -20.86,
       "chords": [
         "d0:0",
         "d1:1"
       ],
       "amEnvelopePeakHz": 11.499,
-      "amEnvelopeProminence": 11.9,
+      "amEnvelopeProminence": 6.2,
       "amOscMaxHz": 11.88,
       "amOscMeanHz": 11.5,
       "amLockN": 23,
@@ -29,50 +29,50 @@
     },
     "level2": {
       "seconds": 10,
-      "peakDbfs": -29.42,
-      "maxRiseDb200ms": 4.96,
+      "peakDbfs": -32.58,
+      "maxRiseDb200ms": 4.68,
       "riseAtS": 3.86,
-      "rmsDbfs": -39.62,
+      "rmsDbfs": -39.81,
       "chords": []
     },
     "level8": {
       "seconds": 10,
-      "peakDbfs": -17.98,
-      "maxRiseDb200ms": 5.71,
+      "peakDbfs": -20.04,
+      "maxRiseDb200ms": 5.11,
       "riseAtS": 3.93,
-      "rmsDbfs": -26.83,
+      "rmsDbfs": -28.04,
       "chords": []
     },
     "i2": {
       "seconds": 10,
-      "peakDbfs": -29.42,
-      "maxRiseDb200ms": 4.96,
+      "peakDbfs": -32.58,
+      "maxRiseDb200ms": 4.68,
       "riseAtS": 3.86,
-      "rmsDbfs": -39.62,
+      "rmsDbfs": -39.81,
       "chords": []
     },
     "i6": {
       "seconds": 10,
-      "peakDbfs": -22.17,
-      "maxRiseDb200ms": 5.56,
+      "peakDbfs": -24.23,
+      "maxRiseDb200ms": 5.09,
       "riseAtS": 2.42,
-      "rmsDbfs": -31.04,
+      "rmsDbfs": -31.97,
       "chords": []
     },
     "i10": {
       "seconds": 10,
-      "peakDbfs": -13.53,
-      "maxRiseDb200ms": 6.45,
-      "riseAtS": 3.93,
-      "rmsDbfs": -22.4,
+      "peakDbfs": -15.49,
+      "maxRiseDb200ms": 5.64,
+      "riseAtS": 2.12,
+      "rmsDbfs": -23.89,
       "chords": []
     },
     "breakthrough": {
       "seconds": 20,
-      "peakDbfs": -7.46,
-      "maxRiseDb200ms": 6.59,
-      "riseAtS": 18.49,
-      "rmsDbfs": -20.36,
+      "peakDbfs": -6.51,
+      "maxRiseDb200ms": 5.98,
+      "riseAtS": 19.99,
+      "rmsDbfs": -19.43,
       "chords": [
         "c0:0",
         "c1:1"
@@ -80,10 +80,10 @@
     },
     "challenge": {
       "seconds": 24,
-      "peakDbfs": -10.37,
-      "maxRiseDb200ms": 9.19,
-      "riseAtS": 3.57,
-      "rmsDbfs": -23.66,
+      "peakDbfs": -9.85,
+      "maxRiseDb200ms": 8.05,
+      "riseAtS": 3.56,
+      "rmsDbfs": -23.32,
       "chords": [
         "c0:0",
         "d0:0",
@@ -96,7 +96,7 @@
       "peakDbfs": -20.39,
       "maxRiseDb200ms": 10.6,
       "riseAtS": 12.26,
-      "rmsDbfs": -35.18,
+      "rmsDbfs": -35.23,
       "chords": []
     },
     "ceilingStress": {
@@ -104,7 +104,7 @@
       "maxRiseDb200ms": 0
     }
   },
-  "renderMs": 3906,
+  "renderMs": 4059,
   "sampleRate": 48000,
   "frameDt": 0.016,
   "wavs": [

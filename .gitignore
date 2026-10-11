@@ -19,3 +19,4 @@ assets/sample/*.jpg
 
 verification/tmp/
 verification/gallery_before_polish/
+verification/run.out

@@ -6,6 +6,7 @@
 //   ?debug=1&scrub=1&dose=<step>&seed=<int>[&v=<0-10>][&layer=<room|form_constants|chrysanthemum|waiting_room|breakthrough>]
 //   [&challenge=1][&entity=1][&message=1][&eyes=<0-1>][&autofill=neutral][&sensitivity=<0.25-3>]
 //   [&sweep=1[&sweepS=<seconds for 0→10→0, default 60>]][&panel=1 (show the scrubber panel)]
+//   [&session=<id> (reuse an existing prepared session: its trip_script, intake and assets; no new session)]
 // creates a session through the API with the autofilled intake, waits until it is ready, skips
 // title/safety/intake/hit and enters the trip with the model's intensity replaced by forced values.
 // The normal flow is untouched, and the SafetyLimiter stays the last pass in every mode.
@@ -75,6 +76,8 @@ interface ScrubCfg {
   sweep: boolean;
   sweepS: number;
   panel: boolean;
+  /** reuse this prepared session (trip_script + assets) instead of creating one */
+  session: string | null;
 }
 const numParam = (k: string): number | null => {
   const v = Q.get(k);
@@ -98,6 +101,7 @@ const SCRUB: ScrubCfg | null = CFG.debug && Q.get('scrub') === '1' ? (() => {
     sweep: Q.get('sweep') === '1',
     sweepS: Math.max(4, numParam('sweepS') ?? 60),
     panel: Q.get('panel') === '1',
+    session: /^[A-Za-z0-9_.-]{1,80}$/.test(Q.get('session') ?? '') ? Q.get('session') : null,
   };
 })() : null;
 
@@ -134,6 +138,8 @@ interface HyperspaceHooks {
   audioContext?: AudioContext;
   audio?: HyperspaceAudio;
   drawCurve?: (pts: [number, number][]) => void;
+  /** the running trip's Director (tests read its `flickers` and `sequence`); null outside a trip */
+  director?: Director | null;
   [k: string]: unknown;
 }
 
@@ -338,8 +344,11 @@ class Trip {
   private layers: unknown[] = [];
   private framesRendered = 0;
   private sweepStart = -1;
-  private messageCycleStart = -1;
   private messageShown = false;
+  private captureEntityPending: number | null = null;   // entity index waiting for its fade-in
+  private captureMessagePending = false;               // message waiting for its envelope peak
+  private mouseDist = 0;                               // screen diagonals moved since the last frame
+  private lastMouse: { x: number; y: number } | null = null;
 
   constructor(
     private sessionId: string | null,
@@ -364,6 +373,7 @@ class Trip {
     this.director = new Director(script, seed, { gentle: this.state.gentle, surrender: intake.answers.surrender });
     hs.state = this.state;
     hs.events = this.events;
+    hs.director = this.director;
 
     // ---- DOM ----
     setScreen('trip');
@@ -412,6 +422,7 @@ class Trip {
     const down = (e: KeyboardEvent) => {
       if (this.ended) return;
       if (e.key === 'Escape') { e.preventDefault(); this.end('escape'); return; }
+      if (this.state.interaction) this.state.interaction.keyPulse = 1; // two-way communication (any key)
       if (e.repeat) return;
       const k = e.key.toLowerCase();
       if (k === 'i') this.hud.toggle();
@@ -427,6 +438,11 @@ class Trip {
       else if (e.key === ' ') this.letGoUp();
     };
     const move = (e: MouseEvent) => {
+      if (this.lastMouse) {
+        const diag = Math.hypot(window.innerWidth, window.innerHeight) || 1;
+        this.mouseDist += Math.hypot(e.clientX - this.lastMouse.x, e.clientY - this.lastMouse.y) / diag;
+      }
+      this.lastMouse = { x: e.clientX, y: e.clientY };
       this.lookTarget = { yaw: (e.clientX / window.innerWidth - 0.5) * 2 * LOOK.maxYaw, pitch: -(e.clientY / window.innerHeight - 0.5) * 2 * LOOK.maxPitch };
     };
     window.addEventListener('keydown', down);
@@ -538,26 +554,42 @@ class Trip {
     // ---- look (user-initiated only, velocity-clamped) ----
     st.look = clampLook(st.look, this.lookTarget, dtWall);
 
+    // ---- interaction (two-way communication, BUILD.md 11.7 item 5): key pulse decays over 1 s,
+    //      mouse speed in screen diagonals per second, smoothed over ~0.25 s ----
+    const ia = st.interaction ?? (st.interaction = { keyPulse: 0, lookVel: 0 });
+    ia.keyPulse = Math.max(0, ia.keyPulse - dtWall);
+    if (dtWall > 0) {
+      const speed = Math.min(1, this.mouseDist / dtWall);
+      ia.lookVel += (speed - ia.lookVel) * (1 - Math.exp(-dtWall / 0.25));
+    }
+    this.mouseDist = 0;
+
     // ---- director (scrub: keep a forced difficult passage running) ----
     if (forcedChallenge && !this.director.challenge.active && this.director.challenge.relief <= 0) {
       this.director.forceChallenge(t);
     }
     // a forced message is shown by the director as soon as the (forced) entity is present
-    if (forcedMessage && !this.messageShown && this.director.entity.present) this.director.forceMessage(t);
+    if (forcedMessage && !this.messageShown && this.director.entity.present) this.director.forceMessage(t, true);
     for (const e of this.director.update({ tMin: t, visual: v, latched: st.breakthroughLatched, letGo: st.letGo })) {
       this.events.log(e.type, e.payload, e.t_min);
-      if (e.type === 'message_shown') this.messageShown = true;
-      if (e.type === 'entity_appear') this.capture(`entity_${String(e.payload.index ?? 0)}`);
-      if (e.type === 'message_shown') this.capture('message');
+      if (e.type === 'message_shown') { this.messageShown = true; this.captureMessagePending = true; }
+      if (e.type === 'entity_appear') this.captureEntityPending = Number(e.payload.index ?? 0);
     }
-    Object.assign(st.entity, this.director.entity);
+    const de = this.director.entity;
+    Object.assign(st.entity, de, { position: [de.position[0], de.position[1]] as [number, number] });
     st.challenge = { ...this.director.challenge };
     st.message = { ...this.director.message };
-    if (forcedMessage && !st.message.active) {
-      // scrub: the director shows the message once; keep it cycling (12 s shown, 3 s pause)
-      if (this.messageCycleStart < 0) this.messageCycleStart = st.wallTime;
-      const ct = (st.wallTime - this.messageCycleStart) % 15;
-      st.message = { active: ct < 12, t: ct };
+    st.sequence = { ...this.director.sequence };
+    // frame captures (BUILD.md 11.7): the entity once it has faded in, the message at its full envelope
+    // (the entity frame waits until the being has arrived: past its approach, bright and close)
+    if (this.captureEntityPending !== null && st.entity.present && st.entity.behaviour !== 'approach'
+      && st.entity.behaviour !== 'depart' && st.entity.intensity >= 0.75 && (st.entity.depth ?? 1) >= 0.6) {
+      this.capture(`entity_${this.captureEntityPending}`);
+      this.captureEntityPending = null;
+    }
+    if (this.captureMessagePending && (st.message.intensity ?? 0) >= 0.95) {
+      this.capture('message');
+      this.captureMessagePending = false;
     }
 
     // ---- audio (reads only the shared state); the microphone reading flows back through it ----
@@ -618,7 +650,7 @@ class Trip {
   // ---- scrub / test hooks ----
   forceChallengeNow(): void { this.director.forceChallenge(this.model.tMin); }
   forceEntityNow(): void { this.director.forceEntity(this.model.tMin); }
-  forceMessageNow(): void { this.director.forceMessage(this.model.tMin); }
+  forceMessageNow(): void { this.director.forceMessage(this.model.tMin, true); }
 
   /** Apply the debug layer override: the forced layer fully present (room included), the other
    *  higher layers off; breakthrough forced = latched. */
@@ -761,6 +793,7 @@ class Trip {
       hs.pipeline = null;
       document.body.classList.remove('in-trip');
       activeTrip = null;
+      hs.director = null;
       forcedLayer = null;
       forcedChallenge = false;
       forcedMessage = false;
@@ -875,20 +908,37 @@ async function scrubFlow(sc: ScrubCfg): Promise<'new' | 'title'> {
   setScreen('scrub-setup');
   let seed = CFG.seed ?? clockSeed();
   let sessionId: string | null = null;
-  const intake = loadProfile(CFG.autofill ?? 'neutral', { dose: CFG.dose ?? 'breakthrough', gentle: CFG.gentle }, seed)
+  let intake = loadProfile(CFG.autofill ?? 'neutral', { dose: CFG.dose ?? 'breakthrough', gentle: CFG.gentle }, seed)
     ?? defaultIntake(seed);
-  try {
-    const r = await api.createSession(seed);
-    sessionId = r.id;
-    seed = r.seed ?? seed;
-  } catch {
-    console.warn('scrub: back end not reachable: offline trip script');
+  let script: TripScript = offlineTripScript(intake);
+  if (sc.session) {
+    // &session=<id>: reuse an existing prepared session (its trip script, intake and assets); nothing is
+    // created or planned, so galleries with real images are fast. The session's own seed wins over &seed.
+    try {
+      const r = await api.replay(sc.session);
+      script = r.trip_script;
+      seed = Number(r.seed ?? script.seed ?? seed);
+      const saved = r.intake as unknown as Intake | null;
+      if (saved && saved.answers && saved.options) intake = saved;
+      if (CFG.gentle) intake.options = { ...intake.options, difficult_passages: false };
+      sessionId = sc.session;
+    } catch (e) {
+      await messageScreen('error', [`SCRUB MODE: SESSION ${sc.session} IS NOT AVAILABLE.`, String(e)]);
+      return 'title';
+    }
+  } else {
+    try {
+      const r = await api.createSession(seed);
+      sessionId = r.id;
+      seed = r.seed ?? seed;
+    } catch {
+      console.warn('scrub: back end not reachable: offline trip script');
+    }
   }
   intake.seed = seed;
   intake.hold_fraction = 1;
   hs.sessionId = sessionId;
-  let script: TripScript = offlineTripScript(intake);
-  if (sessionId) {
+  if (sessionId && !sc.session) {
     try {
       await api.intake(sessionId, intake);
       const t0 = Date.now();

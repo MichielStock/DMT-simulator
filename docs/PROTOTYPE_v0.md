@@ -1,7 +1,28 @@
 # Prototype v0 — what works, what to look at, what is still missing
 
-Checkpoint cut on 2026-10-11 for a first hands-on evaluation. Milestones M0–M8 are complete and
-the guard + visual-polish pass has landed; M9–M11 are not started.
+## v0.1 (M9), 2026-10-11: what changed and what to evaluate
+
+**What changed since v0**
+- **The breakthrough is no longer the beige placeholder.** It now shows the worlds SDXL generated for your session as 360° panoramas, which crossfade every 25–45 s. A glowing gold and cyan polygon frame surrounds them, set in a dark honeycomb membrane with luminous filaments. During the release you see this as a portal that opens wide. If no image was generated, a procedural nebula world is shown instead.
+- **Beings and glyph messages.** The planned entities arrive 5–20 s after the world, come closer, and "speak" once per trip. The message is a ring of an alien glyph alphabet seeded per session. Beings with no image are drawn as procedural glyph beings.
+- **Director.** Runs the full sequence: the veil lifts, the world appears, a being arrives with beats every 8–15 s and then departs, and another may follow while you stay high. It also runs difficult passages with relief. Gentle mode never starts a difficult passage and allows at most one short fear flicker.
+- **Softer sound.** Lower whine, softer and low-passed carrier, gentler buzz and crackle, and the default volume is 0.5. `-`/`+` still step it by 10%.
+
+**What to evaluate**
+1. A **breakthrough** dose all the way through. Does the trip stay spectacular after the waiting room, with no beige stretch? Watch for the portal opening, the world, the being arriving, and the glyph message.
+2. Whether the peak feels like a climax. The art-director review still says it does not escalate past v 7.5, and the frame is pushed to the screen edges.
+3. The **sound** at the new default volume. Is it still too loud or harsh?
+4. **Gentle mode** (intake option) at a strong dose: is it calm throughout?
+
+**Known weak spots**
+- With a dark generated world (one of the two test seeds), the peak is dim.
+- The difficult passages look murky (olive on purple) instead of sharp acid colours.
+- The echo copies of the being can look beige.
+- A thin horizontal line can show across the procedural world.
+
+All safety checks pass: the 60 s worst case for the breakthrough plus the 0 → 10 → 0 sweep, and the limiter tests. Still frames are in `verification/gallery/breakthrough/`; `integration_real_v9.png` is a real session at the peak.
+
+Checkpoint v0 was cut on 2026-10-11 for a first hands-on evaluation (M0–M8); v0.1 above adds M9. M10–M11 are not started.
 
 ## Run it
 
@@ -31,7 +52,7 @@ Controls are in `docs/CONTROLS.md`. Escape always ends the trip. Sound volume is
 
 ## Known gaps (planned, not bugs)
 
-- **Breakthrough layer is still the M3 placeholder.** The planner already generates worlds and beings
+- **Breakthrough layer is still the M3 placeholder.** (Superseded in v0.1, see above.) The planner already generates worlds and beings
   (SDXL-Lightning behind the safety filter, see `sessions/<id>/assets/`), but the front-end layer that
   shows them, the entities, the glyph messages, the director beats and the difficult passages with
   relief are M9.

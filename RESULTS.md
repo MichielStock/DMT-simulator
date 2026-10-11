@@ -666,3 +666,93 @@ Linear luminance (sRGB-decoded, Rec.709) of the final gallery PNGs; satB = mean 
 
 Before (r2): kifs p95 0.036–0.122 (seed22 0.043/0.049), challenge p95 0.127/0.129/0.193.
 Gallery checks 12/12 pass. Guard (`highContrastFraction`, 10-s monitor): kifs seeds 11/22 v 5/9 max 0.098–0.11, guard never engaged (before the peripheral-thread fade: 0.18–0.27, engaged). Worst case (20 s, no sweep): seed 11 (mandelbox) PASS, 0 pattern frames, max area 0.156, flashes 0.5/s, max mean 0.117; seed 12 (kifs) PASS, 0 pattern frames, max area 0.188, flashes 0.5/s, max mean 0.123; limiter engaged 0×. Layer cost at 1920×1080 (shoot.mjs PERF, 30-frame batches, steady state): kifs v9 1.4–1.5 ms, mandelbox v9 2.5 ms, mandelbox challenge 2.6 ms (first batches 4–7 ms while clocks ramp); gallery render_stats frameMs 16.7 (vsync).
+
+## Audio softening (audio-soft)
+These are offline renders (`E2E_BASE_URL=http://127.0.0.1:5176 npx playwright test audio`) at master volume 1.0. At the new default volume of 0.5 every level is 6.0 dB lower; at the old default of 0.8 it was 1.9 dB lower. Speaker levels at default volume are therefore about 4.1 dB lower before any of the timbre changes below. Bands come from `uv run python tools/audio_spectrogram.py --compare verification/tmp/audio-soft/before`: the share of power in each band from 6 s to the end, in dB relative to the total.
+
+| render | peak dBFS before → after | RMS dBFS before → after | centroid Hz | 3–6 kHz share dB | > 6 kHz share dB |
+|---|---|---|---|---|---|
+| max (all on) | −5.00 → −5.92 | −20.24 → −20.86 | — | — | — |
+| i2 (v 2) | −29.42 → −32.58 | −39.62 → −39.81 | 338 → 271 | −26.0 → −59.8 | −25.7 → −62.4 |
+| i6 (v 6) | −22.17 → −24.22 | −31.04 → −31.97 | 764 → 647 | −20.0 → −29.1 | −60.2 → −72.5 |
+| i10 (v 10) | −13.53 → −15.49 | −22.40 → −23.89 | 1838 → 1561 | −10.0 → −13.6 | −19.5 → −29.6 |
+| breakthrough | −7.46 → −6.51 | −20.36 → −19.43 | 1097 → 740 | −13.2 → −18.9 | −22.7 → −34.2 |
+| challenge | −10.37 → −9.85 | −23.66 → −23.32 | 1203 → 806 | −13.7 → −18.1 | −21.7 → −33.2 |
+| ceiling stress | −3.44 → −3.44 | | | | |
+
+- **Crackle band.** Grains used to be 1.2–6.5 kHz centres at Q 12–30. They are now 550–2400 Hz centres at Q 8–18, inside a 400–3000 Hz bus filter, and −8 dB. In the i10 spectrogram the grain blobs sit between ≈ 300 Hz and 3 kHz and nothing is left at 3–6 kHz. In i2 the single grain sits at ≈ 0.4–3 kHz with a faint tail.
+- **Gates.** All pass:
+  - largest 200 ms rise 8.44 dB (max render), under 12;
+  - level2 −39.81 < level8 −28.04;
+  - buzz envelope peak 11.499 Hz = 23 × the 0.5 Hz pulse, oscillator max 11.88 Hz.
+  - The envelope prominence of the buzz fell from 11.9 to 6.2 because the AM is shallower. Less margin, but the peak is still the locked buzz.
+- **RMS barely moved** (−0.2 to −1.5 dB). It is dominated by the unchanged body rumble and the carrier fundamental, and a shallower AM raises the mean gain slightly. The softening shows up as less high-frequency energy (the band columns) and as the −4.1 dB default volume.
+- **Spectrograms, looked at.**
+  - i10: four carrier harmonic lines instead of 5–6, a fainter 6.8 kHz whine line, crackle below 3 kHz.
+  - i2: a clean 330 Hz carrier with faint 2nd–4th harmonics, the whine at 2.8 kHz about 30 dB down.
+  - breakthrough: the pad chords are now the brightest mid-band feature, with entity voices above them.
+  - challenge: ring-mod lines and clusters from 3 s, the open major relief chord from 13 s.
+- **Not listened to.** There is no audio output here, so these are spectrogram and metric judgements only.
+
+## Director M9 (director agent, 2026-10-11)
+Template stack: back end 8772 (`HYPERSPACE_FORCE_TEMPLATES=1 HYPERSPACE_NO_IMAGES=1`, sessions in `verification/tmp/director/sessions`), Vite no-HMR 5175.
+- `npx tsc --noEmit`: clean. `npx vitest run`: 12 files, 329 tests pass (director.test.ts 25 tests: 10 updated M3 tests + 15 new).
+- Hazard Monte Carlo (600 seeds, surrender 5): mean passage 35.3 s free (expected E[min(T,90)] 36.2 s), 8.42 s with space held (expected 8.5 s); test tolerance 10 % for surrender 0/5/10, held and free. Cap: 80 seeds at surrender 0, every passage ≤ 90 s, > 5 capped (flagged `capped: true`), relief 1 for 1–10 s after, 0 after 15.5 s. Gentle: 200 seeds, no challenge events even with `forceChallenge`, at most one flicker, longest measured < 5 s, 20–120 seeds with a flicker.
+- E2E `E2E_BASE_URL=http://127.0.0.1:5175 HYPERSPACE_SESSIONS_DIR=verification/tmp/director/sessions npx playwright test escape gentle session`: 6 passed (7.6 min). Escape at the predicted peak (v > 7): fade → grounding ≥ 2.9 s, curve, end screen, report; event log on disk has one `exit_pressed` and `session_end {reason: escape}`; stats `ended_early_at` set. Gentle (strong dose, profile gentle): no challenge events, no flicker for seed 20261012, stats DIFFICULT PASSAGE "GENTLE MODE".
+- Breakthrough session (session.spec, seed 20261010, template planner, 2 beings + message): entity 0 (alien) appears 19.6 s after the latch, beats approach/greet/show/work_on/transform/depart every 8 s (planner durations < 8 s clamped), `message_shown` (theme curiosity) 2.2 s into work_on, entity 1 arrives 20 s after entity 0's depart finished; stats box "BEINGS MET 2 · ALIEN", "MESSAGE RECEIVED". Frames entity_0, entity_1, message, peak captured.
+- Breakthrough gallery (`GALLERY_LAYERS=breakthrough GALLERY_OUT=verification/tmp/director/gallery`, template stack): 14 frames, gallery_checks 12/12 pass (the two `_entity` frames are outside the checker's naming). Frames are the breakthrough agent's work in progress; my honest words: the forced entity + message frames (`breakthrough_v9_s{11,23}_entity.png`) are luminous and intricate — a glowing sapphire (s23) / gold-and-cyan arched (s11) being centred and close, full rotating glyph rings in cyan and coral, kaleidoscopic echoes around it; the base v 7.5/9 frames without a being are a bright gold/violet line lattice in a glowing decagon frame on a violet ground, luminous in the centre but sparse, and the outer frame panels are flat mid-tone mauve/teal blocks (flat, slightly muddy). In the session capture `entity_0` (taken at intensity 0.6, before the depth condition was added) the being was a faint ghost off to the side; the capture now waits for depth ≥ 0.5 too (not re-run in a full session).
+
+## Breakthrough (breakthrough agent, 2026-10-11)
+"Generated worlds, framed": the session's SDXL panoramas inside a rotating polygonal mandala frame, beings in front with kaleidoscopic echoes, glyph rings for the message. Decisions D-B1..D-B10 are in NOTES.md.
+- **Gallery** (`GALLERY_LAYERS=breakthrough E2E_BASE_URL=http://127.0.0.1:5174 … scripts/gallery.sh`, REAL back end on 8771 with SDXL worlds; 11.0 min, setup 36–52 s per shot inside the spec's budget): capture exit 0, `gallery_checks.py` **12/12 pass**.
+- **Words, honest:**
+  - v9/v7.5 s23: luminous, deep, saturated nebula sky (orange cloud, gold sun, cyan) with a glowing robed being (real sprite) haloed by a ring and five mirrored echoes. Reads as a climax. The frame is the weak part: dusty blue/teal/olive flat bands, matte.
+  - v9/v7.5 s11: a deep navy cosmos with a magenta-gold comet stream; jewel-bright inside a gold/cyan rim. No being, because seed 11's plan has none and the spec does not force one. Frame bands plum/teal, flat.
+  - v9 challenge s23: acid green and violet, a tight green-rimmed aperture, green glyph rings round a cold blue being. Harsh and sharp, not grey: works.
+  - v9 challenge s11: violet world with acid-green streaks. Harsh, legible, a bit empty without a being.
+  - v1/v3/v5 (forced; in a real trip the layer only latches at v ≥ 8): the frame is closed to a small glowing window. A banded stained-glass tunnel in muted plum/teal/blue. Honest words: **flat, matte, slightly muddy**. This does not meet the bar. In a real session these frames never show, because the layer weight is 0 below the latch except during the 20-s release fade.
+  - My own captures (verification/tmp/breakthrough/): r4.png (real world, being, gold/violet glyph rings: striking), t5.png (procedural fallback: an emissive gold/violet lattice dome with a glyph being and rings; vivid, busier, more "geometric" than "world"), t_ch.png (procedural, difficult passage).
+- **Worst case** (`WORSTCASE_LAYERS=breakthrough WORSTCASE_SECONDS=20 WORSTCASE_SWEEP=0`, template stack 5173/8778, with entity, message and challenge forced): **PASS**. Max 1.0 general flash/s, 0 red, 0 pattern frames (max area 0.094), max mean luminance 0.102. The limiter's flash backstop engaged once (logged event).
+- **Pattern guard:** off on the final captures (highContrastFraction ≤ 0.12 real, ≤ 0.165 procedural). Before D-B5 (bright seams) it was engaged: hcf 0.2–0.36 with grey blotches.
+- **Cost** at 1920×1080: the layer's own pass measures 0.54 ms (procedural) and 0.56 ms (real worlds, being, rings). This is a CPU-timed loop of 60 renders with a render-target readback as the sync, so treat it as approximate. Budget is 6 ms.
+- **Unit tests:** `npx vitest run tests/breakthrough.test.ts` 13/13 (alphabet determinism and 20–30 distinct glyphs, frame budget ≤ 2.4 / Michelson < 0.45, edge-passing < 2 Hz, aperture and veil, schedule 25–45 s with crossfades ≥ 2 s and never a cut, echoes 3–7, morph continuity, rings 2–4 with ≤ 0.5 Hz, message envelope). `npx tsc --noEmit` is clean.
+
+### Breakthrough, round 2 (after the art-director rejection; breakthrough agent, 2026-10-11)
+Decisions D-B11..D-B17 in NOTES.md. Changes: the surround tunnel of flat panels is replaced by a near-black log-polar Voronoi membrane with emissive accent filaments; the portal opens to ≥ 80 % of the screen at v ≥ 7.5; the procedural world is rebuilt (nebulae, spiral lattice, jewel galaxies); beings and echoes take accent colours, with a coloured halo ring; glyph rings are bright (L 0.5–0.8) with a dark backing; the difficult passage is green/magenta on black; phases are integrated, so the flash backstop no longer engages for a whole passage.
+- **Gallery:** `scripts/gallery.sh` on the REAL stack (8771/5174) took 10.4 min, capture exit 0. Afterwards I re-captured with verification/tmp/breakthrough/cap.mjs (same file names; sidecars rewritten to the gallery fields): v7.5_s11, v9_s11, v9_s11_entity and v9_s11_challenge (after the exposure fix), and v9_s23_challenge (after the polygon-rotation fix, at challenge level 1). New frames: v9_s{11,23}_message (real), v9_s11_procedural (being + rings), v9_s23_procedural and v9_s11_procedural_challenge (template stack). `gallery_checks.py --layers breakthrough`: **12/12 pass**. The new kinds fall outside the checker's naming, so it skips them. Pattern guard: off on every capture (max hcf 0.12).
+- **Numbers** (linear luminance; saturation is the mean HSV S over the brighter half):
+  - v9_s23: p95 0.645, sat 0.64
+  - v9_s23_entity: p95 0.683
+  - v9_s23_message: p95 0.686
+  - v9_s23_challenge: p95 0.292, sat 0.50
+  - v9_s11_entity: p95 0.357
+  - v9_s11_message: p95 0.338
+  - v9_s11_procedural: p95 0.454
+  - v9_s23_procedural: p95 0.396
+  - **Below the 0.25 floor:** v9_s11 at 0.158 (sat 0.75), v9_s11_challenge at 0.134 (sat 0.56) and v9_s11_procedural_challenge at 0.213. Seed 11's real world is a mostly dark navy neon cosmos; the exposure lift (≤ ×2.2) raised it only from 0.134.
+  - Surround (outer 140-px columns) at v1–v5: p05 0.006, median 0.010–0.012, p95 0.026–0.032. This is now true dark with thin bright lines. At v9 the outer columns are mostly world.
+- **Words, honest:**
+  - v9_s23 and v7.5_s23: an immersive luminous nebula sky (orange cloud, gold sun, cyan) fills almost the whole frame. The robed being is lavender-blue, haloed by a thin cyan/gold ring, with gold, lavender and teal echoes, and gold/cyan filament polygons sit at the edges. Reads as a climax. The being is still on the pale side (lavender rather than jewel), and its lower edge shows a stair-stepped matte from the sprite itself.
+  - v9_s23_message: bright gold and cyan glyph rings stream around the being and read clearly over the nebula. Striking.
+  - v9_s11 and v7.5_s11: a magenta-gold flame stream across a deep navy cosmos with glowing blue lights. Vivid, but the right half is dark: luminous rather than overwhelming.
+  - v9_s11_entity and v9_s11_message: a golden glass-robed glyph being with a pink head and gold/cyan glyph rings over the flame stream, with coloured echoes. No sprite box. Jewelled and alive.
+  - Challenge frames (s11, s23, procedural): acid green and magenta filaments on near-black violet cells, a tighter portal, the world in violet and acid green. Harsh and cold, not grey. s11's world centre is a dim purple murk. s23 shows one bright green horizontal line at the panorama's horizon, from the edge filaments.
+  - Procedural frames: luminous violet/magenta/teal nebulae, a gold/pink spiral lattice, jewel galaxies and a straight-line lattice. Bright and colourful. Slightly hazy and pastel in places, and the straight lattice lines read a little like a wireframe.
+  - v1–v5: a small-to-mid portal (about 35 % at v5) with gold/cyan double polygons inside a near-black jewel-violet/blue honeycomb membrane with glowing cyan/pink/violet filaments. No longer beige. At v5 the cells still read as dark coloured panels (blue for lunar, violet for neon), not black. In a real trip these frames only show during the release.
+- **Worst case** (`WORSTCASE_LAYERS=breakthrough WORSTCASE_SECONDS=20 WORSTCASE_SWEEP=0`, template stack, entity, message and challenge forced): **PASS**. Max 1.0 general flash/s, 0 red, 0 pattern frames (max pattern area 0.188 < 0.25, max periodic contrast 0.96), max mean luminance 0.188. The limiter logged one engagement event. Traced on its own: before D-B13 the backstop was engaged for the whole forced passage; after it, 0 engagements through a full passage (s23 with being and message, template stack).
+- **Cost** at 1920×1080 (CPU-timed loop of 60 renders with a readback; approximate): 0.57 ms with a real world, being and rings; 1.43 ms with the procedural world, being and rings. Budget is 6 ms.
+- **Unit tests:** `npx vitest run tests/breakthrough.test.ts` 15/15. New tests cover portal coverage of at least 80 % at v ≥ 7.5 for 7- and 12-gons, a narrower portal in a passage, near-black membrane fill and a constant cell count. `npx tsc --noEmit` is clean.
+
+## Integration M9 (integrate-m9, 2026-10-11)
+| Check | Result |
+|---|---|
+| `cd frontend && npx tsc --noEmit` | clean (exit 0) |
+| `npx vitest run` | 12 files, 331/331 pass (30.5 s) |
+| `npx vite build` | ok (pipeline 508 kB, main 329 kB) |
+| real server `./run.sh --serve-only` (8765) + `npx playwright test session escape gentle screens --reporter=line` | 14/14 pass (12.0 min); gentle: flickers [], 0 measured runs |
+| same server, `npx playwright test safety-limiter --reporter=line` | 5/5 pass (35.5 s), every case flashcheck PASS |
+| real breakthrough session via API + scrub `&session=2026-10-11_1746`, v 9, entity + message forced, 1920×1080 | intake → ready 38.1 s; entity 1.0, depth 0.93, message 0.90; passes end with SafetyLimiter; no page errors; `verification/gallery/breakthrough/integration_real_v9.png` |
+| `WORSTCASE_LAYERS=breakthrough WORSTCASE_SECONDS=60 E2E_BASE_URL=http://127.0.0.1:5179 scripts/worstcase_flash.sh` (template stack 8779/5179) | 2/2 PASS. breakthrough: max 1.0 flash/s, 0 red, 0 pattern frames (max area 0.188), max mean L 0.188, limiter engaged 1×. sweep: max 1.0 flash/s, 0 red, 0 pattern frames, max mean L 0.17, limiter engaged 1× |
+| `GALLERY_LAYERS=breakthrough E2E_BASE_URL=http://127.0.0.1:5179 scripts/gallery.sh` | capture exit 0, checks 12/12 PASS |
+
+By eye: the real v 9 frame is vivid and cosmic (orange, gold and cyan nebula over dark mountains, a violet robed being inside gold and cyan glyph rings, frame at the screen edges) but cluttered, with beige echo sprites. The template-stack procedural v 9 frames are colourful (violet, cyan, magenta, gold spiral), with soft hazy clouds; a thin horizontal line at mid-height is still visible in v9_s11.

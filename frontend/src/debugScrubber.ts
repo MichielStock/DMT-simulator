@@ -2,6 +2,15 @@
 // (body and auditory scale proportionally), buttons to force each layer, an entity, a message and a
 // difficult passage. It only writes the shared state / director; it never touches the render
 // pipeline or the SafetyLimiter.
+//
+// Scrub mode URL (main.ts, requires ?debug=1; see CONTRACTS.md "Amendments (director, M9)"):
+//   /?debug=1&scrub=1&dose=<step>&seed=<int>[&v][&layer][&challenge=1][&entity=1][&message=1][&eyes]
+//   [&sensitivity][&sweep=1&sweepS=60][&panel=1][&session=<id>]
+// &session=<id> reuses an existing prepared session (GET /api/session/<id>/replay: its trip_script, intake
+// and assets under /sessions/<id>/) instead of creating and planning a new one, so galleries with real
+// generated images take seconds per frame. The session's own seed replaces &seed; nothing is written to it
+// (scrub trips never post events or frames). A forced entity stays (it never departs) and a forced
+// message keeps cycling (12 s shown, 3 s pause).
 
 import { h } from './ui/dom';
 import { WEIGHT_KEYS, LAYER_NAMES, type WeightKey } from './state';

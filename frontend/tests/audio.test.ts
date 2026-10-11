@@ -4,9 +4,10 @@ import { describe, expect, it } from 'vitest';
 import {
   AM_MAX_HZ, AmLock, CHORDS_CONSONANT, CHORDS_DISSONANT, CHORD_RELIEF, CHORD_XFADE_S, DbSlew, MAX_RISE_DB_PER_S,
   MIN_ATTACK_S, PulseTracker, VOWELS, amDepth, amRateHz, carrierDb, carrierDetuneCents, carrierHz, chordAt,
-  crackleRate, eyesCutoffHz, grainCurve, isConsonant, lockedAm, padRootHz, rumbleDb, rumbleHz, swellCurve, whineHz,
+  crackleRate, eyesCutoffHz, amDepthShape, carrierLpfHz, crackleDb, grainCentreHz, ringModAmount, CARRIER_HARMONICS,
+  CRACKLE_BAND_HZ, WHINE_REL_DB, PAD_DB, padDb, grainCurve, isConsonant, lockedAm, padRootHz, rumbleDb, rumbleHz, swellCurve, whineHz,
 } from '../src/audio/synth';
-import { ceilingCurve, CEILING_LINEAR } from '../src/audio/limiter';
+import { ceilingCurve, CEILING_LINEAR, DEFAULT_VOLUME } from '../src/audio/limiter';
 import { centroidNorm, levelNorm, spectralCentroid } from '../src/audio/mic';
 
 describe('carrier and partials', () => {
@@ -164,5 +165,48 @@ describe('master ceiling and mic', () => {
     expect(centroidNorm(8000)).toBeCloseTo(1);
     const spec = new Float32Array(1024).fill(-200); spec[100] = 0;
     expect(spectralCentroid(spec, 48000, 2048)).toBeCloseTo(100 * 48000 / 2048, 0);
+  });
+});
+
+describe('softening (D-A-soft)', () => {
+  it('default volume is 0.5 and reachable in 0.1 steps', () => {
+    expect(DEFAULT_VOLUME).toBe(0.5);
+    expect(Math.round(DEFAULT_VOLUME * 10)).toBeCloseTo(DEFAULT_VOLUME * 10, 9);
+  });
+  it('the whine partial is ≥ 30 dB under the carrier and the carrier is low-passed at 4–6 kHz', () => {
+    expect(WHINE_REL_DB).toBeLessThanOrEqual(-30);
+    expect(carrierLpfHz(0)).toBe(4000);
+    expect(carrierLpfHz(10)).toBe(6000);
+    // soft waveform: each harmonic ≤ 0.2 of the fundamental and falling
+    for (let k = 2; k < CARRIER_HARMONICS.length; k++) {
+      expect(CARRIER_HARMONICS[k]).toBeLessThanOrEqual(0.2);
+      expect(CARRIER_HARMONICS[k]).toBeLessThan(CARRIER_HARMONICS[k - 1]);
+    }
+  });
+  it('buzz depth shape: 0 below 1, 0.3 at 3, 0.8 at 9, rising; ≤ 3.1 dB swing', () => {
+    expect(amDepthShape(1)).toBe(0);
+    expect(amDepthShape(3)).toBeCloseTo(0.3, 9);
+    expect(amDepthShape(9)).toBeCloseTo(0.8, 9);
+    for (let v = 0; v < 10; v += 0.5) expect(amDepthShape(v + 0.5)).toBeGreaterThanOrEqual(amDepthShape(v));
+    expect(20 * Math.log10(1 / (1 - 2 * amDepth(10, 1)))).toBeLessThan(3.2);
+    expect(amDepth(5, 1)).toBeLessThan(0.08);
+  });
+  it('crackle is quieter, sparse at low intensity, and band-limited to 400–3000 Hz', () => {
+    expect(crackleDb(10)).toBeLessThanOrEqual(-36);
+    expect(crackleRate(2)).toBeLessThan(0.35);
+    expect(CRACKLE_BAND_HZ).toEqual([400, 3000]);
+    expect(grainCentreHz(0)).toBeGreaterThanOrEqual(400);
+    expect(grainCentreHz(1)).toBeLessThanOrEqual(3000);
+  });
+  it('the pad is more present; challenge roughness scales with the challenge level', () => {
+    expect(PAD_DB).toBeGreaterThan(-14);
+    expect(padDb('consonant')).toBe(PAD_DB);
+    expect(padDb('relief')).toBe(PAD_DB);
+    expect(padDb('dissonant')).toBeLessThanOrEqual(-14);
+    expect(ringModAmount(0.3, 0)).toBeLessThan(0.15);
+    expect(ringModAmount(0.6, 0)).toBeLessThan(ringModAmount(1, 0));
+    expect(ringModAmount(1, 0)).toBeCloseTo(0.6, 9);
+    expect(ringModAmount(1, 1)).toBe(0);
+    expect(carrierDetuneCents(0.3, 0, 1000)).toBeLessThan(carrierDetuneCents(1, 0, 1000));
   });
 });

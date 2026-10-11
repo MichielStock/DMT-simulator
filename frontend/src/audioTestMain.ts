@@ -8,7 +8,7 @@
 // Results on window.__audioTest; ?wav=1 also returns base64 WAVs of the listening renders.
 
 import { createAudio, type HyperspaceAudio } from './audio';
-import { createMasterChain } from './audio/limiter';
+import { createMasterChain, DEFAULT_VOLUME } from './audio/limiter';
 import { createState, type SharedState } from './state';
 
 const SR = 48000;
@@ -279,6 +279,7 @@ async function realtime(): Promise<void> {
   const ctx = new AudioContext();
   await ctx.resume();
   const audio = createAudio(ctx, { enabled: true, microphone: false, seed: 7 });
+  const startVolume = audio.volume;
   const st = createState(7);
   setIntensity(st, 10);
   st.layerWeights.breakthrough = 1; st.entity.present = true; st.entity.intensity = 1;
@@ -297,15 +298,15 @@ async function realtime(): Promise<void> {
     };
     requestAnimationFrame(frame);
   });
-  audio.setVolume(0.5);
+  audio.setVolume(0.3);
   audio.exitTone();
   audio.groundingAmbient(true);
   audio.uiClick();
   audio.stop(1);
-  const res = { state: ctx.state, amN: amN[amN.length - 1], amHz: audio.debug.amHz, pulseHz: audio.debug.pulseHz, volume: audio.volume, frames: amN.length, chord: audio.debug.chord };
+  const res = { state: ctx.state, amN: amN[amN.length - 1], amHz: audio.debug.amHz, pulseHz: audio.debug.pulseHz, volume: audio.volume, startVolume, frames: amN.length, chord: audio.debug.chord };
   audio.dispose();
   await ctx.close();
-  window.__audioTest = { done: true, pass: res.amN >= 21 && res.amN <= 23 && res.volume === 0.5, realtime: res };
+  window.__audioTest = { done: true, pass: res.amN >= 21 && res.amN <= 23 && res.volume === 0.3 && res.startVolume === DEFAULT_VOLUME, realtime: res };
   log(`realtime: ${JSON.stringify(res)}`);
 }
 

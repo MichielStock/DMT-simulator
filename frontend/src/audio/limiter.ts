@@ -33,8 +33,10 @@ export interface MasterChain {
 }
 
 export const VOLUME_RAMP_S = 0.25;
+/** Default master volume (D-A-soft0: 0.8 → 0.5; −/+ still step it by 0.1 up to 1). */
+export const DEFAULT_VOLUME = 0.5;
 
-export function createMasterChain(ctx: BaseAudioContext, destination: AudioNode = ctx.destination, volume = 0.8): MasterChain {
+export function createMasterChain(ctx: BaseAudioContext, destination: AudioNode = ctx.destination, volume = DEFAULT_VOLUME): MasterChain {
   const input = ctx.createGain();
   input.gain.value = 1;
   const comp = ctx.createDynamicsCompressor();

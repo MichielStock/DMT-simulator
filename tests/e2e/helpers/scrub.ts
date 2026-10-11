@@ -1,6 +1,7 @@
 // Scrub-mode helpers (BUILD.md 5.2 debug scrubber, 16.2 galleries / worst case).
 // Scrub mode: /?debug=1&scrub=1&dose=<step>&seed=<int>&v=..&layer=..&challenge=1&entity=1&message=1&eyes=..
 // creates a session through the API, skips title/safety/intake/hit and enters the trip with forced values.
+// &session=<id> reuses an existing prepared session (trip_script + assets, e.g. real SDXL images) instead.
 // Only erasable TypeScript syntax (also imported by node --experimental-strip-types tools).
 import { expect, type Page } from '@playwright/test';
 import * as fs from 'node:fs';
@@ -23,6 +24,8 @@ export interface ScrubOptions {
   sweepS?: number;
   autofill?: string;
   panel?: boolean;
+  /** reuse this prepared session (its trip_script and assets) instead of creating one */
+  session?: string | null;
 }
 
 export function scrubUrl(o: ScrubOptions = {}): string {
@@ -42,7 +45,19 @@ export function scrubUrl(o: ScrubOptions = {}): string {
   if (o.sweep) q.set('sweep', '1');
   if (o.sweepS !== undefined) q.set('sweepS', String(o.sweepS));
   if (o.panel) q.set('panel', '1');
+  if (o.session) q.set('session', o.session);
   return `/?${q.toString()}`;
+}
+
+/** `GALLERY_SESSIONS=11=<id>,23=<id>`: seed → prepared session id to reuse (empty map when unset). */
+export function sessionsFromEnv(name: string): Map<number, string> {
+  const out = new Map<number, string>();
+  for (const part of (process.env[name] ?? '').split(',').map((x) => x.trim()).filter(Boolean)) {
+    const m = /^(\d+)[=:](.+)$/.exec(part);
+    if (!m) throw new Error(`${name}: expected <seed>=<session id>, got "${part}"`);
+    out.set(Number(m[1]), m[2]);
+  }
+  return out;
 }
 
 /** Comma-separated env list filtered to the known layers (all layers when unset/empty). */
@@ -65,7 +80,9 @@ export interface HsSnapshot {
   challengeLevel: number;
   challengeActive: boolean;
   entity: number;
+  entityDepth: number;
   message: boolean;
+  messageIntensity: number;
   eyesClosed: number;
   renderStats: { frameMs: number; renderScale: number; frames: number } | null;
   passes: string[];
@@ -86,7 +103,9 @@ export async function snapshot(page: Page): Promise<HsSnapshot> {
       challengeLevel: st ? Number(st.challenge.level) : 0,
       challengeActive: st ? !!st.challenge.active : false,
       entity: st && st.entity.present ? Number(st.entity.intensity) : 0,
+      entityDepth: st && st.entity.present ? Number(st.entity.depth ?? 0) : 0,
       message: st ? !!st.message.active : false,
+      messageIntensity: st ? Number(st.message.intensity ?? (st.message.active ? 1 : 0)) : 0,
       eyesClosed: st ? Number(st.eyesClosed) : 0,
       renderStats: hs.renderStats ? { ...hs.renderStats } : null,
       passes: hs.pipeline ? [...hs.pipeline.passes] : [],
@@ -98,7 +117,7 @@ export async function snapshot(page: Page): Promise<HsSnapshot> {
  *  (state.wallTime) so the neural field settles. Returns the snapshot at that moment. */
 export async function waitReady(page: Page, settleS = 2, timeout = 120_000): Promise<HsSnapshot> {
   await expect.poll(async () => (await snapshot(page)).screen, { timeout, intervals: [100, 250, 500] }).toBe('trip');
-  await expect.poll(async () => (await snapshot(page)).ready, { timeout: 60_000, intervals: [100, 250] }).toBe(true);
+  await expect.poll(async () => (await snapshot(page)).ready, { timeout: Math.max(60_000, timeout), intervals: [100, 250] }).toBe(true);
   const t0 = (await snapshot(page)).wallTime;
   await expect.poll(async () => (await snapshot(page)).wallTime - t0, { timeout: settleS * 1000 + 30_000, intervals: [100, 200] })
     .toBeGreaterThanOrEqual(settleS);

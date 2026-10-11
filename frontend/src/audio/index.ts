@@ -24,7 +24,7 @@
 //   250 ms) → WaveShaper hard ceiling just under −3 dBFS → volume. Continuous levels are slewed in
 //   dB (≤ 20 dB/s rise, DbSlew) and then set with setTargetAtTime; grains and syllables use ≥ 200 ms
 //   raised-cosine / linear attacks; fades from silence are dB-linear. The buzz is an amplitude
-//   modulation of ≤ 4.4 dB depth (AM_DEPTH_MAX), never an onset.
+//   modulation of ≤ 3.1 dB depth (AM_DEPTH_MAX 0.15, sine modulator), never an onset.
 //   THE ONE EXCEPTION: uiClick() is a 30 ms, −30 dBFS blip on its own GainNode straight to the
 //   destination, outside the trip chain. UI only (end-screen typing), never during the trip, and
 //   silent when the sound option is off or the volume is 0.
@@ -33,11 +33,11 @@ import { deriveSeed, mulberry32, type Rng } from '../rng';
 import type { SharedState } from '../state';
 import { createAmbient, expFade, playExitTone } from './ambient';
 import { createEntityVoices, type EntityVoices } from './entityVoice';
-import { createMasterChain, type MasterChain } from './limiter';
+import { createMasterChain, DEFAULT_VOLUME, type MasterChain } from './limiter';
 import { createMic, type Mic, type MicReading } from './mic';
 import {
   AmLock, DbSlew, PulseTracker, SILENT_DB, WHINE_REL_DB, amDepth, amRateHz, carrierBLevel, carrierDb, carrierDetuneCents,
-  carrierHz, chordAt, chordFreqs, clamp01, crackleDb, crackleRate, dbToGain, eyesCutoffHz, grainCurve,
+  carrierHz, carrierLpfHz, chordAt, grainCentreHz, CARRIER_HARMONICS, CRACKLE_BAND_HZ, padDb, chordFreqs, clamp01, crackleDb, crackleRate, dbToGain, eyesCutoffHz, grainCurve,
   padRootHz, ringModAmount, rumbleDb, rumbleHz, whineHz, CHORD_XFADE_S, START_FADE_S, type ChordKind,
 } from './synth';
 
@@ -76,10 +76,10 @@ function noiseBuffer(ctx: BaseAudioContext, seconds: number, rng: Rng): AudioBuf
   return b;
 }
 
-/** A periodic wave with a few soft harmonics: the "carrier wave" hum. */
+/** A periodic wave with a few soft harmonics: the "carrier wave" hum (softened, D-A-soft2). */
 function carrierWave(ctx: BaseAudioContext): PeriodicWave {
-  const real = new Float32Array([0, 0, 0, 0, 0, 0]);
-  const imag = new Float32Array([0, 1, 0.32, 0.14, 0.06, 0.025]);
+  const imag = new Float32Array(CARRIER_HARMONICS);
+  const real = new Float32Array(imag.length);
   return ctx.createPeriodicWave(real, imag);
 }
 
@@ -105,7 +105,7 @@ export function createAudio(ctx: BaseAudioContext, opts: AudioOptions): Hyperspa
   let rng: Rng = mulberry32(deriveSeed(opts.seed ?? 1, 'audio'));
   let seeded = opts.seed !== undefined;
   const t0 = ctx.currentTime;
-  const master: MasterChain = createMasterChain(ctx, ctx.destination, opts.volume ?? 0.8);
+  const master: MasterChain = createMasterChain(ctx, ctx.destination, opts.volume ?? DEFAULT_VOLUME);
   const noise = noiseBuffer(ctx, 3, mulberry32(0x5eed));
 
   // ---- buses ----
@@ -148,9 +148,15 @@ export function createAudio(ctx: BaseAudioContext, opts: AudioOptions): Hyperspa
   carBGain.gain.value = carrierBLevel(0, 0);
   carA.connect(carSum);
   carB.connect(carBGain).connect(carSum);
+  // soft low-pass on dry + ring-mod carrier (4 → 6 kHz, no resonance): fewer upper harmonics
+  const carLp = ctx.createBiquadFilter();
+  carLp.type = 'lowpass';
+  carLp.frequency.value = carrierLpfHz(0);
+  carLp.Q.value = 0.5;
+  carLp.connect(amVca);
   const carDry = ctx.createGain();
   carDry.gain.value = 0;
-  carSum.connect(carDry).connect(amVca);
+  carSum.connect(carDry).connect(carLp);
   const rmVca = ctx.createGain();
   rmVca.gain.value = 0;
   const rmOsc = ctx.createOscillator();
@@ -158,7 +164,7 @@ export function createAudio(ctx: BaseAudioContext, opts: AudioOptions): Hyperspa
   rmOsc.connect(rmVca.gain);
   const rmLevel = ctx.createGain();
   rmLevel.gain.value = 0;
-  carSum.connect(rmVca).connect(rmLevel).connect(amVca);
+  carSum.connect(rmVca).connect(rmLevel).connect(carLp);
   const whine = ctx.createOscillator();
   whine.frequency.value = whineHz(0);
   const whineGain = ctx.createGain();
@@ -184,9 +190,18 @@ export function createAudio(ctx: BaseAudioContext, opts: AudioOptions): Hyperspa
   rumLp.connect(rumGain).connect(amVca);
 
   // ---- crackle grains (room bus) ----
+  // bus band-limited to 400–3000 Hz (2nd-order high-pass + low-pass) after the per-grain band-pass
   const crackleBus = ctx.createGain();
   crackleBus.gain.value = 0;
-  crackleBus.connect(roomLpf);
+  const crHp = ctx.createBiquadFilter();
+  crHp.type = 'highpass';
+  crHp.frequency.value = CRACKLE_BAND_HZ[0];
+  crHp.Q.value = 0.6;
+  const crLp = ctx.createBiquadFilter();
+  crLp.type = 'lowpass';
+  crLp.frequency.value = CRACKLE_BAND_HZ[1];
+  crLp.Q.value = 0.6;
+  crackleBus.connect(crHp).connect(crLp).connect(roomLpf);
   let nextGrain = t0 + 0.5;
   let liveGrains = 0;
 
@@ -289,8 +304,8 @@ export function createAudio(ctx: BaseAudioContext, opts: AudioOptions): Hyperspa
     src.loop = true;
     const bp = ctx.createBiquadFilter();
     bp.type = 'bandpass';
-    bp.frequency.value = 1200 * Math.pow(6500 / 1200, rng());
-    bp.Q.value = 12 + 18 * rng();
+    bp.frequency.value = grainCentreHz(rng());
+    bp.Q.value = 8 + 10 * rng();
     const g = ctx.createGain();
     g.gain.value = 0;
     const pan = ctx.createStereoPanner();
@@ -338,6 +353,7 @@ export function createAudio(ctx: BaseAudioContext, opts: AudioOptions): Hyperspa
       // carrier, ring-mod, whine
       const fc = carrierHz(a);
       for (const o of [carA, carB]) o.frequency.setTargetAtTime(fc, now, 0.25);
+      carLp.frequency.setTargetAtTime(carrierLpfHz(a), now, 0.4);
       carB.detune.setTargetAtTime(carrierDetuneCents(L, relief, fc), now, 0.6);
       carBGain.gain.setTargetAtTime(carrierBLevel(L, relief), now, 0.6);
       rmOsc.frequency.setTargetAtTime(fc * Math.SQRT2 * 1.003, now, 0.25);
@@ -372,9 +388,9 @@ export function createAudio(ctx: BaseAudioContext, opts: AudioOptions): Hyperspa
       // breakthrough pad / difficult passage chords
       const w = clamp01(state.layerWeights.breakthrough);
       const padAmt = Math.max(w, 0.75 * L, 0.75 * relief);
-      padBus.gain.setTargetAtTime(dbToGain(lv.pad.step(padAmt > 0.001 ? -14 + 20 * Math.log10(padAmt) : SILENT_DB, dt)), now, 0.05);
       const root = padRootHz(fc);
       const ch = chordAt(state.wallTime, L, relief);
+      padBus.gain.setTargetAtTime(dbToGain(lv.pad.step(padAmt > 0.001 ? padDb(ch.kind) + 20 * Math.log10(padAmt) : SILENT_DB, dt)), now, 0.05);
       if (padAmt > 0.001 || lv.pad.db > SILENT_DB) {
         if (chordKey === '') {
           // first chord: set directly on the active slot (the pad bus itself is still silent)

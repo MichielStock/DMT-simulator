@@ -4,7 +4,7 @@
       "/home/mstock/.local/opt/node/bin/node",
       "/home/mstock/Code/hyperspace/frontend/node_modules/.bin/playwright",
       "test",
-      "safety-limiter"
+      "audio"
     ],
     "configFile": "/home/mstock/Code/hyperspace/frontend/playwright.config.ts",
     "rootDir": "/home/mstock/Code/hyperspace/tests/e2e",
@@ -56,7 +56,7 @@
         "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
         "timeout": 900000,
         "use": {
-          "baseURL": "http://127.0.0.1:5178",
+          "baseURL": "http://127.0.0.1:5176",
           "headless": true,
           "viewport": {
             "width": 1280,
@@ -105,18 +105,18 @@
   },
   "suites": [
     {
-      "title": "safety-limiter.spec.ts",
-      "file": "safety-limiter.spec.ts",
+      "title": "audio.spec.ts",
+      "file": "audio.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [
         {
-          "title": "SafetyLimiter: bw10 captured at real time passes flashcheck",
+          "title": "offline render of the full audio graph is safe and follows the state",
           "ok": true,
           "tags": [],
           "tests": [
             {
-              "timeout": 180000,
+              "timeout": 240000,
               "annotations": [],
               "expectedStatus": "passed",
               "projectId": "",
@@ -126,164 +126,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 7305,
-                  "errors": [],
-                  "stdout": [
-                    {
-                      "text": "flashcheck: /home/mstock/Code/hyperspace/verification/captures/safety-bw10\n  frames 150 at 30 fps (5.0 s), capture achieved 55.8 fps\n  general flashes: max 1.5/s in any 1 s window (tile area 1.5, whole frame 1.5, fine detail 1.5; limit 3)\n  red flashes:     max 0.0/s (limit 3)\n  pattern frames:  0 (max area 0.0, max periodic contrast 0.0); motion windows 0\n  max mean luminance 0.791\n  RESULT: PASS\n"
-                    }
-                  ],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-10T22:40:43.946Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "5c08bb829cdcd6c01c15-ff6ac2300762e46b949c",
-          "file": "safety-limiter.spec.ts",
-          "line": 44,
-          "column": 7
-        },
-        {
-          "title": "SafetyLimiter: red8 captured at real time passes flashcheck",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 180000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "",
-              "projectName": "",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 7208,
-                  "errors": [],
-                  "stdout": [
-                    {
-                      "text": "flashcheck: /home/mstock/Code/hyperspace/verification/captures/safety-red8\n  frames 150 at 30 fps (5.0 s), capture achieved 56.6 fps\n  general flashes: max 1.0/s in any 1 s window (tile area 1.0, whole frame 1.0, fine detail 1.0; limit 3)\n  red flashes:     max 1.5/s (limit 3)\n  pattern frames:  0 (max area 0.0, max periodic contrast 0.0); motion windows 0\n  max mean luminance 0.213\n  RESULT: PASS\n"
-                    }
-                  ],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-10T22:40:51.392Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "5c08bb829cdcd6c01c15-e2c5c7b222dd21c745fd",
-          "file": "safety-limiter.spec.ts",
-          "line": 44,
-          "column": 7
-        },
-        {
-          "title": "SafetyLimiter: stripes captured at real time passes flashcheck",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 180000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "",
-              "projectName": "",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 7590,
-                  "errors": [],
-                  "stdout": [
-                    {
-                      "text": "flashcheck: /home/mstock/Code/hyperspace/verification/captures/safety-stripes\n  frames 150 at 30 fps (5.0 s), capture achieved 59 fps\n  general flashes: max 2.0/s in any 1 s window (tile area 2.0, whole frame 0.5, fine detail 2.0; limit 3)\n  red flashes:     max 0.0/s (limit 3)\n  pattern frames:  0 (max area 0.0, max periodic contrast 0.421); motion windows 0\n  max mean luminance 0.504\n  RESULT: PASS\n"
-                    }
-                  ],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-10T22:40:58.608Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "5c08bb829cdcd6c01c15-6cf1ebdeabd763f8487b",
-          "file": "safety-limiter.spec.ts",
-          "line": 44,
-          "column": 7
-        },
-        {
-          "title": "SafetyLimiter: bw10-debug captured at real time passes flashcheck",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 180000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "",
-              "projectName": "",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 7238,
-                  "errors": [],
-                  "stdout": [
-                    {
-                      "text": "flashcheck: /home/mstock/Code/hyperspace/verification/captures/safety-bw10-debug\n  frames 150 at 30 fps (5.0 s), capture achieved 59.2 fps\n  general flashes: max 1.5/s in any 1 s window (tile area 1.5, whole frame 1.5, fine detail 1.5; limit 3)\n  red flashes:     max 0.0/s (limit 3)\n  pattern frames:  0 (max area 0.0, max periodic contrast 0.0); motion windows 0\n  max mean luminance 0.791\n  RESULT: PASS\n"
-                    }
-                  ],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-10T22:41:06.206Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "5c08bb829cdcd6c01c15-41291b30a9e974822711",
-          "file": "safety-limiter.spec.ts",
-          "line": 44,
-          "column": 7
-        },
-        {
-          "title": "SafetyLimiter: static control does not engage and passes flashcheck",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 120000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "",
-              "projectName": "",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 5594,
+                  "duration": 4404,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-10T22:41:13.450Z",
+                  "startTime": "2026-10-11T14:20:20.233Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -291,19 +139,63 @@
               "status": "expected"
             }
           ],
-          "id": "5c08bb829cdcd6c01c15-a445c6342559b2cef30a",
-          "file": "safety-limiter.spec.ts",
-          "line": 77,
+          "id": "87be2dcdb54c25970a35-f33e7ce1a140a3d88562",
+          "file": "audio.spec.ts",
+          "line": 22,
           "column": 5
+        }
+      ],
+      "suites": [
+        {
+          "title": "live AudioContext",
+          "file": "audio.spec.ts",
+          "line": 51,
+          "column": 6,
+          "specs": [
+            {
+              "title": "the graph runs in real time with irregular frames and the buzz locks to the pulse",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7077,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-11T14:20:24.686Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "87be2dcdb54c25970a35-5483c6be63c489f57c57",
+              "file": "audio.spec.ts",
+              "line": 52,
+              "column": 7
+            }
+          ]
         }
       ]
     }
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-10T22:40:43.722Z",
-    "duration": 35399.317,
-    "expected": 5,
+    "startTime": "2026-10-11T14:20:20.011Z",
+    "duration": 11790.712,
+    "expected": 2,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

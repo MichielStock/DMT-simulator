@@ -33,8 +33,17 @@ export function carrierHz(auditory: number): number {
 export function whineHz(auditory: number): number {
   return 2400 * Math.pow(2, 1.5 * clamp01(auditory / 10));
 }
-/** Whine level relative to the carrier. */
-export const WHINE_REL_DB = -24;
+/** Whine level relative to the carrier (D-A-soft1: −24 → −32 dB, the user found the sound harsh). */
+export const WHINE_REL_DB = -32;
+/**
+ * Low-pass on the carrier (dry + ring-mod) before the buzz VCA: 4 kHz at rest rising to 6 kHz at
+ * auditory 10, Q 0.5 (no resonance), so only the first few harmonics of the carrier come through.
+ */
+export function carrierLpfHz(auditory: number): number {
+  return 4000 + 2000 * clamp01(auditory / 10);
+}
+/** Harmonic amplitudes (sine terms, index = harmonic) of the soft carrier waveform. */
+export const CARRIER_HARMONICS = [0, 1, 0.2, 0.06, 0.02];
 
 export const AM_MIN_HZ = 4;
 /** Top of the buzz mapping; the lock may round down to an integer multiple of the pulse, never up. */
@@ -48,14 +57,20 @@ export function amRateHz(intensity: number): number {
 }
 
 /**
- * AM depth d: the modulated gain swings between 1 − 2d and 1 (sinusoidally), so d ≤ 0.2 keeps the
- * trough at ≥ 0.6 (≤ 4.4 dB swing on the modulated voices, well under the 12 dB/200 ms onset test).
- * Depth swells with the shared pulse, so geometry and sound breathe together.
+ * AM depth d: the modulated gain swings between 1 − 2d and 1 on a sine (a raised-cosine dip, no
+ * edges). AM_DEPTH_MAX 0.15 keeps the trough at ≥ 0.7 (≤ 3.1 dB swing on the modulated voices).
+ * The depth shape rises with intensity — 0 below 1, 0.3 at 3, 0.8 at 9 (D-A-soft3) — so the buzz
+ * is a gentle shimmer at low/mid intensity and only becomes a clear buzz near the peak. Depth
+ * swells with the shared pulse, so geometry and sound breathe together.
  */
-export const AM_DEPTH_MAX = 0.2;
+export const AM_DEPTH_MAX = 0.15;
+export function amDepthShape(intensity: number): number {
+  const v = clamp(intensity, 0, 10);
+  if (v < 3) return 0.3 * smoothstep(1, 3, v);
+  return Math.min(1, 0.3 + (0.5 * (v - 3)) / 6);
+}
 export function amDepth(intensity: number, pulseNorm: number): number {
-  const x = clamp01((intensity - 1) / 9);
-  return AM_DEPTH_MAX * x * (0.55 + 0.45 * clamp01(pulseNorm));
+  return AM_DEPTH_MAX * amDepthShape(intensity) * (0.55 + 0.45 * clamp01(pulseNorm));
 }
 
 /**
@@ -70,10 +85,19 @@ export function lockedAm(targetHz: number, pulseHz: number): { n: number; hz: nu
   return { n, hz: Math.min(AM_MAX_HZ, n * pulseHz) };
 }
 
-/** Crackle grains per second, 0 below auditory 0.5, rising to 5/s at 10 (sparse soft popcorn). */
+/**
+ * Crackle grains per second, 0 below auditory 0.5, ≈ 0.3/s at 2, ≈ 1.7/s at 6, 4.5/s at 10
+ * (sparse soft popcorn; D-A-soft4: fewer grains at low intensity than the first version).
+ */
 export function crackleRate(auditory: number): number {
   if (auditory < 0.5) return 0;
-  return 0.25 + 4.75 * Math.pow(clamp01(auditory / 10), 1.4);
+  return 0.1 + 4.4 * Math.pow(clamp01(auditory / 10), 2);
+}
+/** Crackle band: every grain and the crackle bus are band-limited to 400–3000 Hz. */
+export const CRACKLE_BAND_HZ: [number, number] = [400, 3000];
+/** Grain band-pass centre for a uniform random u ∈ [0, 1): geometric 550 → 2400 Hz. */
+export function grainCentreHz(u: number): number {
+  return 550 * Math.pow(2400 / 550, clamp01(u));
 }
 /** Body rumble 40–60 Hz following the body channel. */
 export function rumbleHz(body: number): number {
@@ -84,7 +108,9 @@ export function rumbleHz(body: number): number {
 export function carrierDb(auditory: number): number {
   const g = smoothstep(0.1, 1.2, auditory);
   if (g <= 0) return SILENT_DB;
-  return -42 + 24 * clamp01(auditory / 10) + 20 * Math.log10(g);
+  // top end 3 dB lower than the first version (−18 → −21 dB at 10, D-A-soft2): a 1.76 kHz tone is
+  // where the ear is most sensitive
+  return -42 + 21 * clamp01(auditory / 10) + 20 * Math.log10(g);
 }
 export function rumbleDb(body: number): number {
   const g = smoothstep(0.1, 1.5, body);
@@ -94,7 +120,17 @@ export function rumbleDb(body: number): number {
 export function crackleDb(auditory: number): number {
   const g = smoothstep(0.3, 1.5, auditory);
   if (g <= 0) return SILENT_DB;
-  return -40 + 12 * clamp01(auditory / 10) + 20 * Math.log10(g);
+  return -48 + 12 * clamp01(auditory / 10) + 20 * Math.log10(g);
+}
+/** Breakthrough pad level (dB before the master chain) at full weight; was −14 (D-A-soft5). */
+export const PAD_DB = -10;
+/**
+ * Pad level while a dissonant cluster sounds: kept at the old −14 dB. The clusters' minor second at
+ * the pad root beats at ≈ 6–6.5 Hz; louder, that beat would mask the pulse-locked buzz (D-A-soft6).
+ */
+export const PAD_DISSONANT_DB = -14;
+export function padDb(kind: ChordKind): number {
+  return kind === 'dissonant' ? PAD_DISSONANT_DB : PAD_DB;
 }
 /**
  * Detune of the second carrier oscillator (cents): normally a slow 0.5 Hz beat at any pitch (well
@@ -110,9 +146,12 @@ export function carrierDetuneCents(challenge: number, relief: number, fc = 440):
 export function carrierBLevel(challenge: number, relief: number): number {
   return 0.3 + 0.3 * clamp01(challenge) * (1 - clamp01(relief));
 }
-/** Ring-modulation mix 0–0.8 from the challenge level, released in the relief beat. */
+/**
+ * Ring-modulation mix from the challenge level, released in the relief beat: 0.6 · level^1.5, so a
+ * mild passage (level 0.3) is barely rough (0.1) and only a full one reaches 0.6 (was 0.8 · level).
+ */
 export function ringModAmount(challenge: number, relief: number): number {
-  return 0.8 * clamp01(challenge) * (1 - clamp01(relief));
+  return 0.6 * Math.pow(clamp01(challenge), 1.5) * (1 - clamp01(relief));
 }
 /** Eyes closed muffles the room-ish elements: low-pass cutoff 14 kHz → 1.8 kHz (geometric). */
 export function eyesCutoffHz(eyesClosed: number): number {
