@@ -21,3 +21,4 @@ verification/tmp/
 verification/gallery_before_polish/
 verification/run.out
 test-results/
+verification/server.pid
